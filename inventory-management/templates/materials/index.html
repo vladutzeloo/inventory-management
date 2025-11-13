@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Materials - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-cube"></i> Materials</h2>
+    <div>
+        <a href="{{ url_for('materials.import_data') }}" class="btn btn-info">
+            <i class="fas fa-file-import"></i> Import
+        </a>
+        <a href="{{ url_for('materials.export') }}" class="btn btn-success">
+            <i class="fas fa-file-export"></i> Export
+        </a>
+        <a href="{{ url_for('materials.new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Material
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('materials.index') }}" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search text-blue"></i>
+                    </span>
+                    <input type="text"
+                           class="form-control"
+                           name="search"
+                           placeholder="Search materials by name or description..."
+                           value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" name="category">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{{ url_for('materials.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Materials Table -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i> Materials List
+            <span class="badge bg-light text-primary ms-2">{{ pagination.total }} Total</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if materials %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>UoM</th>
+                        <th class="text-end">Current Stock</th>
+                        <th class="text-end">Reorder Level</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for material, stock_qty in materials %}
+                    <tr>
+                        <td>
+                            <strong class="text-primary">{{ material.name }}</strong>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ material.description[:50] }}{% if material.description|length > 50 %}...{% endif %}</small>
+                        </td>
+                        <td>
+                            {% if material.category %}
+                            <span class="badge bg-info">{{ material.category }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ material.unit_of_measure }}</span>
+                        </td>
+                        <td class="text-end">
+                            {% if stock_qty <= 0 %}
+                            <span class="badge bg-danger">{{ stock_qty }}</span>
+                            {% elif stock_qty <= material.reorder_level %}
+                            <span class="badge bg-warning text-dark">{{ stock_qty }}</span>
+                            {% else %}
+                            <span class="badge bg-success">{{ stock_qty }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <span class="text-muted">{{ material.reorder_level }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if material.active %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> Active
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-times-circle"></i> Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('materials.edit', id=material.id) }}"
+                                   class="btn btn-outline-primary"
+                                   title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-outline-danger"
+                                        onclick="confirmDelete('{{ material.name }}', {{ material.id }})"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No materials found.</p>
+            <a href="{{ url_for('materials.new') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create First Material
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-light">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('materials.index', page=pagination.prev_num, search=search, category=category) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('materials.index', page=page_num, search=search, category=category) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('materials.index', page=pagination.next_num, search=search, category=category) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} -
+                {{ min(pagination.page * pagination.per_page, pagination.total) }} of {{ pagination.total }} materials
+            </small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Form -->
+<form id="deleteForm" method="POST" style="display: none;">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(materialName, materialId) {
+    if (confirm('Are you sure you want to delete material "' + materialName + '"?\n\nThis action cannot be undone.')) {
+        const form = document.getElementById('deleteForm');
+        form.action = "{{ url_for('materials.delete', id=0) }}".replace('0', materialId);
+        form.submit();
+    }
+}
+
+// Auto-submit form on category change
+document.querySelector('select[name="category"]').addEventListener('change', function() {
+    this.closest('form').submit();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt {{ receipt.receipt_number }} - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header with Actions -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-truck-loading text-primary"></i>
+                Receipt Details
+            </h2>
+            <div>
+                <a href="{{ url_for('receipts.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+                <button type="button" class="btn btn-danger" onclick="deleteReceipt({{ receipt.id }}, '{{ receipt.receipt_number }}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Receipt Header Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-file-invoice"></i> {{ receipt.receipt_number }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Left Column -->
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <th class="text-primary" width="40%">
+                                    <i class="fas fa-calendar"></i> Receipt Date:
+                                </th>
+                                <td>
+                                    <strong>{{ receipt.receipt_date.strftime('%Y-%m-%d') if receipt.receipt_date else 'N/A' }}</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-primary">
+                                    <i class="fas fa-file-invoice"></i> PO Number:
+                                </th>
+                                <td>
+                                    {% if receipt.po_number %}
+                                    <span class="badge bg-info">{{ receipt.po_number }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-primary">
+                                    <i class="fas fa-truck"></i> Supplier:
+                                </th>
+                                <td>
+                                    <strong>{{ receipt.supplier_name or '-' }}</strong>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <th class="text-primary" width="40%">
+                                    <i class="fas fa-user"></i> Created By:
+                                </th>
+                                <td>{{ receipt.created_by }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-primary">
+                                    <i class="fas fa-clock"></i> Created At:
+                                </th>
+                                <td>{{ receipt.created_at.strftime('%Y-%m-%d %H:%M:%S') if receipt.created_at else 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-primary">
+                                    <i class="fas fa-boxes"></i> Total Items:
+                                </th>
+                                <td>
+                                    <span class="badge bg-primary">{{ receipt_items|length }} items</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                {% if receipt.notes %}
+                <hr>
+                <div>
+                    <strong class="text-primary">
+                        <i class="fas fa-sticky-note"></i> Notes:
+                    </strong>
+                    <p class="mt-2 mb-0">{{ receipt.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Receipt Items Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> Receipt Items
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type</th>
+                                <th>Item/Material</th>
+                                <th>Location</th>
+                                <th>Bin</th>
+                                <th class="text-end">Quantity</th>
+                                <th class="text-end">Cost/Unit</th>
+                                <th class="text-end">Total Cost</th>
+                                <th>Supplier Batch</th>
+                                <th>System Batch</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if receipt_items %}
+                                {% set grand_total = namespace(value=0) %}
+                                {% for item in receipt_items %}
+                                {% set line_total = item.quantity * item.cost_per_unit %}
+                                {% set grand_total.value = grand_total.value + line_total %}
+                                <tr>
+                                    <td>
+                                        {% if item.material %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-cube"></i> Material
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-box"></i> Item
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">
+                                            {{ item.material.name if item.material else item.item.name }}
+                                        </strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ item.material.unit_of_measure if item.material else item.item.unit_of_measure }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ item.location.code }}
+                                        </span>
+                                        <br>
+                                        <small class="text-muted">{{ item.location.name }}</small>
+                                    </td>
+                                    <td>
+                                        {% if item.bin %}
+                                        <span class="badge bg-secondary">{{ item.bin.bin_code }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ "%.2f"|format(item.quantity) }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        ${{ "%.2f"|format(item.cost_per_unit) }}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-success">
+                                            ${{ "%.2f"|format(line_total) }}
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        {% if item.supplier_batch_number %}
+                                        <span class="badge bg-warning text-dark">
+                                            {{ item.supplier_batch_number }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.batch %}
+                                        <span class="badge bg-primary">
+                                            {{ item.batch.batch_number }}
+                                        </span>
+                                        <br>
+                                        <small class="text-muted">
+                                            Available: {{ "%.2f"|format(item.batch.quantity_available) }} / {{ "%.2f"|format(item.batch.quantity_original) }}
+                                        </small>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                        <p>No items in this receipt.</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Total Footer -->
+            {% if receipt_items %}
+            <div class="card-footer bg-blue-light">
+                <div class="row">
+                    <div class="col-md-6 offset-md-6">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="text-primary mb-0">
+                                <i class="fas fa-calculator"></i> Grand Total:
+                            </h5>
+                            <h3 class="text-success mb-0">
+                                ${{ "%.2f"|format(grand_total.value) }}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Batch Details Card -->
+        {% if receipt_items %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-barcode"></i> Batch Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Batch Number</th>
+                                <th>Item/Material</th>
+                                <th>Location</th>
+                                <th class="text-end">Original Qty</th>
+                                <th class="text-end">Available Qty</th>
+                                <th class="text-center">Status</th>
+                                <th>Received Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in receipt_items %}
+                                {% if item.batch %}
+                                <tr>
+                                    <td>
+                                        <strong class="text-primary">{{ item.batch.batch_number }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ item.material.name if item.material else item.item.name }}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ item.location.code }}</span>
+                                        {% if item.bin %}
+                                        / {{ item.bin.bin_code }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        {{ "%.2f"|format(item.batch.quantity_original) }}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ "%.2f"|format(item.batch.quantity_available) }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.batch.status == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% elif item.batch.status == 'depleted' %}
+                                        <span class="badge bg-secondary">Depleted</span>
+                                        {% elif item.batch.status == 'expired' %}
+                                        <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                        <span class="badge bg-info">{{ item.batch.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ item.batch.received_date.strftime('%Y-%m-%d') if item.batch.received_date else 'N/A' }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete receipt <strong id="receiptNumber"></strong>?</p>
+                <p class="text-danger">
+                    <i class="fas fa-info-circle"></i> This action cannot be undone if batches have been partially consumed.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteReceipt(receiptId, receiptNumber) {
+    document.getElementById('receiptNumber').textContent = receiptNumber;
+    document.getElementById('deleteForm').action = "{{ url_for('receipts.index') }}/" + receiptId + "/delete";
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

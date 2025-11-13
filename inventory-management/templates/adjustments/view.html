@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Adjustment {{ adjustment.adjustment_number }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-edit"></i> Adjustment Details
+            </h2>
+            <a href="{{ url_for('adjustments.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Adjustments
+            </a>
+        </div>
+
+        <!-- Main Adjustment Card -->
+        <div class="card shadow-blue mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt"></i> {{ adjustment.adjustment_number }}
+                    </h5>
+                    {% if adjustment.quantity_change > 0 %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-arrow-up"></i> Positive Adjustment
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger">
+                        <i class="fas fa-arrow-down"></i> Negative Adjustment
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Left Column -->
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" style="width: 40%;">
+                                    <i class="fas fa-hashtag"></i> Adjustment Number:
+                                </td>
+                                <td>
+                                    <strong class="text-primary">{{ adjustment.adjustment_number }}</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">
+                                    <i class="fas fa-calendar"></i> Date:
+                                </td>
+                                <td>
+                                    <strong>{{ adjustment.adjustment_date.strftime('%B %d, %Y') }}</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">
+                                    <i class="fas fa-cubes"></i> Item:
+                                </td>
+                                <td>
+                                    {% if adjustment.material_id %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-cube"></i> Material
+                                    </span>
+                                    <strong>{{ adjustment.material.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">UoM: {{ adjustment.material.unit_of_measure }}</small>
+                                    {% else %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-box"></i> Item
+                                    </span>
+                                    <strong>{{ adjustment.item.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">UoM: {{ adjustment.item.unit_of_measure }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">
+                                    <i class="fas fa-warehouse"></i> Location:
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ adjustment.location.code }}</span>
+                                    {{ adjustment.location.name }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" style="width: 40%;">
+                                    <i class="fas fa-inbox"></i> Bin:
+                                </td>
+                                <td>
+                                    {% if adjustment.bin_id %}
+                                    <span class="badge bg-info">{{ adjustment.bin.code }}</span>
+                                    {% if adjustment.bin.name %}
+                                    {{ adjustment.bin.name }}
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">No specific bin</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">
+                                    <i class="fas fa-balance-scale"></i> Quantity Change:
+                                </td>
+                                <td>
+                                    {% if adjustment.quantity_change > 0 %}
+                                    <h5 class="mb-0">
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-plus"></i> {{ adjustment.quantity_change }}
+                                        </span>
+                                    </h5>
+                                    {% else %}
+                                    <h5 class="mb-0">
+                                        <span class="badge bg-danger">
+                                            {{ adjustment.quantity_change }}
+                                        </span>
+                                    </h5>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">
+                                    <i class="fas fa-user"></i> Created By:
+                                </td>
+                                <td>
+                                    <strong>{{ adjustment.created_by }}</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">
+                                    <i class="fas fa-clock"></i> Created At:
+                                </td>
+                                <td>
+                                    {{ adjustment.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reason Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-comment-dots"></i> Reason for Adjustment
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ adjustment.reason }}</p>
+            </div>
+        </div>
+
+        <!-- Notes Card (if present) -->
+        {% if adjustment.notes %}
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-sticky-note"></i> Additional Notes
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-wrap;">{{ adjustment.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Impact Summary -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line"></i> Impact Summary
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-primary mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    This adjustment
+                    {% if adjustment.quantity_change > 0 %}
+                    <strong class="text-success">increased</strong>
+                    {% else %}
+                    <strong class="text-danger">decreased</strong>
+                    {% endif %}
+                    the inventory of
+                    <strong>
+                        {% if adjustment.material_id %}
+                        {{ adjustment.material.name }}
+                        {% else %}
+                        {{ adjustment.item.name }}
+                        {% endif %}
+                    </strong>
+                    at location
+                    <strong>{{ adjustment.location.code }}</strong>
+                    {% if adjustment.bin_id %}
+                    (Bin: <strong>{{ adjustment.bin.code }}</strong>)
+                    {% endif %}
+                    by
+                    <strong>{{ adjustment.quantity_change|abs }}</strong>
+                    units.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

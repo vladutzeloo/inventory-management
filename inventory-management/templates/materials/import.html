@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Import Materials - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-file-import"></i> Import Materials</h2>
+            <a href="{{ url_for('materials.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Materials
+            </a>
+        </div>
+
+        <!-- Upload Form Card -->
+        <div class="card shadow-blue mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload"></i> Upload Excel File
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('materials.import_data') }}" enctype="multipart/form-data" id="importForm">
+                    <div class="mb-4">
+                        <label for="file" class="form-label">
+                            <i class="fas fa-file-excel"></i> Select Excel File
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="file"
+                               class="form-control"
+                               id="file"
+                               name="file"
+                               accept=".xlsx,.xls"
+                               required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> Accepted formats: .xlsx, .xls (Excel files only)
+                        </div>
+                    </div>
+
+                    <!-- File Info Display -->
+                    <div id="fileInfo" class="alert alert-info d-none">
+                        <i class="fas fa-file-excel"></i>
+                        <strong>Selected File:</strong> <span id="fileName"></span>
+                        <br>
+                        <strong>Size:</strong> <span id="fileSize"></span>
+                    </div>
+
+                    <!-- Upload Button -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-upload"></i> Upload and Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Download Template Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-download"></i> Download Template
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    <i class="fas fa-lightbulb"></i>
+                    Don't have a file ready? Download our Excel template to get started.
+                </p>
+                <a href="{{ url_for('materials.download_template') }}" class="btn btn-info">
+                    <i class="fas fa-file-excel"></i> Download Template
+                </a>
+                <small class="text-muted d-block mt-2">
+                    The template includes sample data and the correct column format.
+                </small>
+            </div>
+        </div>
+
+        <!-- Instructions Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list-ol"></i> Import Instructions
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6><i class="fas fa-clipboard-check"></i> Step-by-Step Guide:</h6>
+                <ol class="mb-3">
+                    <li>Download the template using the button above</li>
+                    <li>Open the template in Microsoft Excel or compatible software</li>
+                    <li>Fill in your material data following the format shown</li>
+                    <li>Save the file (keep it as .xlsx format)</li>
+                    <li>Upload the file using the form above</li>
+                    <li>Review the import results and check for any errors</li>
+                </ol>
+
+                <h6><i class="fas fa-table"></i> Required Columns:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Name</strong></td>
+                                <td><span class="badge bg-danger">Yes</span></td>
+                                <td>Unique material name</td>
+                                <td>Steel Plate 10mm</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Description</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Detailed description</td>
+                                <td>Steel plate 10mm thickness</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Category</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Material category</td>
+                                <td>Metals</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Unit of Measure</strong></td>
+                                <td><span class="badge bg-danger">Yes</span></td>
+                                <td>UoM (PCS, KG, LT, etc.)</td>
+                                <td>PCS</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reorder Level</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Minimum stock level</td>
+                                <td>100</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reorder Quantity</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Suggested order quantity</td>
+                                <td>200</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Active</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Yes/No or True/False</td>
+                                <td>Yes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Notes Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> Important Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>
+                        <strong>Duplicate Materials:</strong> If a material with the same name already exists,
+                        it will be <strong>updated</strong> with the new data from the file.
+                    </li>
+                    <li>
+                        <strong>New Materials:</strong> Materials that don't exist will be created as new entries.
+                    </li>
+                    <li>
+                        <strong>Data Validation:</strong> The system will validate all data. Rows with errors will be skipped
+                        and reported in the results.
+                    </li>
+                    <li>
+                        <strong>Column Order:</strong> Keep the column order as shown in the template for best results.
+                    </li>
+                    <li>
+                        <strong>Empty Rows:</strong> Empty rows in the file will be automatically skipped.
+                    </li>
+                    <li>
+                        <strong>File Size:</strong> Keep file size under 10MB for optimal performance.
+                    </li>
+                    <li>
+                        <strong>Backup Recommended:</strong> Consider exporting your current materials before importing
+                        to have a backup.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tips Card -->
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); color: white;">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> Pro Tips
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Test First:</strong> Try importing a small sample file first to verify the format</li>
+                    <li><strong>Use Categories:</strong> Consistent category names help with filtering and reporting</li>
+                    <li><strong>Standard UoM:</strong> Use standard unit abbreviations (PCS, KG, LT) for consistency</li>
+                    <li><strong>Set Reorder Levels:</strong> Include reorder levels to enable low stock alerts</li>
+                    <li><strong>Review After Import:</strong> Always review the imported materials list after import</li>
+                    <li><strong>Export Before Import:</strong> Export your current materials as a backup before large imports</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File input change handler
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+
+    if (file) {
+        // Validate file type
+        const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                           'application/vnd.ms-excel'];
+        const extension = file.name.split('.').pop().toLowerCase();
+
+        if (!validTypes.includes(file.type) && !['xlsx', 'xls'].includes(extension)) {
+            alert('Please select a valid Excel file (.xlsx or .xls)');
+            e.target.value = '';
+            fileInfo.classList.add('d-none');
+            return;
+        }
+
+        // Validate file size (10MB max)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+            alert('File size exceeds 10MB limit. Please choose a smaller file.');
+            e.target.value = '';
+            fileInfo.classList.add('d-none');
+            return;
+        }
+
+        // Display file info
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.classList.remove('d-none');
+    } else {
+        fileInfo.classList.add('d-none');
+    }
+});
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// Form validation
+document.getElementById('importForm').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('file');
+
+    if (!fileInput.files.length) {
+        e.preventDefault();
+        alert('Please select a file to upload.');
+        return false;
+    }
+
+    // Show loading indicator
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+
+    return true;
+});
+
+// Drag and drop support
+const fileInput = document.getElementById('file');
+const dropZone = fileInput.parentElement;
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, unhighlight, false);
+});
+
+function highlight(e) {
+    dropZone.classList.add('border-primary', 'bg-blue-light');
+}
+
+function unhighlight(e) {
+    dropZone.classList.remove('border-primary', 'bg-blue-light');
+}
+
+dropZone.addEventListener('drop', handleDrop, false);
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files.length > 0) {
+        fileInput.files = files;
+        // Trigger change event
+        const event = new Event('change', { bubbles: true });
+        fileInput.dispatchEvent(event);
+    }
+}
+</script>
+{% endblock %}

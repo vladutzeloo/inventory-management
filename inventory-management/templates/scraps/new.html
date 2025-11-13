@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}New Scrap Record - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-trash"></i> Create Scrap Record</h2>
+            <a href="{{ url_for('scraps.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Scraps
+            </a>
+        </div>
+
+        <div class="card shadow-blue">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle"></i> Scrap Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('scraps.new') }}" id="scrapForm">
+                    <!-- Scrap Date -->
+                    <div class="mb-3">
+                        <label for="scrap_date" class="form-label">
+                            <i class="fas fa-calendar"></i> Scrap Date
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="date"
+                               class="form-control"
+                               id="scrap_date"
+                               name="scrap_date"
+                               value="{{ today }}"
+                               required>
+                        <div class="form-text">Date when the scrap occurred</div>
+                    </div>
+
+                    <!-- Item Type Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-cubes"></i> Item Type
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="item_type" id="type_material" value="material" checked>
+                            <label class="btn btn-outline-primary" for="type_material">
+                                <i class="fas fa-cube"></i> Material
+                            </label>
+
+                            <input type="radio" class="btn-check" name="item_type" id="type_item" value="item">
+                            <label class="btn btn-outline-primary" for="type_item">
+                                <i class="fas fa-box"></i> Item
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Material Selection -->
+                    <div class="mb-3" id="material_selection">
+                        <label for="material_id" class="form-label">
+                            <i class="fas fa-cube"></i> Select Material
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="material_id" name="item_id">
+                            <option value="">Choose material...</option>
+                            {% for material in materials %}
+                            <option value="{{ material.id }}">{{ material.name }} ({{ material.unit_of_measure }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Item Selection -->
+                    <div class="mb-3" id="item_selection" style="display: none;">
+                        <label for="item_id" class="form-label">
+                            <i class="fas fa-box"></i> Select Item
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="item_id" name="item_id">
+                            <option value="">Choose item...</option>
+                            {% for item in items %}
+                            <option value="{{ item.id }}">{{ item.name }} ({{ item.unit_of_measure }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <!-- Location Selection -->
+                        <div class="col-md-6 mb-3">
+                            <label for="location_id" class="form-label">
+                                <i class="fas fa-warehouse"></i> Location
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="location_id" name="location_id" required>
+                                <option value="">Choose location...</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" data-bins='{{ location.bins | tojson }}'>
+                                    {{ location.code }} - {{ location.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Bin Selection -->
+                        <div class="col-md-6 mb-3">
+                            <label for="bin_id" class="form-label">
+                                <i class="fas fa-inbox"></i> Bin (Optional)
+                            </label>
+                            <select class="form-select" id="bin_id" name="bin_id">
+                                <option value="">No specific bin</option>
+                            </select>
+                            <div class="form-text">Select location first to load bins</div>
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">
+                            <i class="fas fa-balance-scale"></i> Quantity to Scrap
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="number"
+                               class="form-control"
+                               id="quantity"
+                               name="quantity"
+                               step="0.01"
+                               min="0.01"
+                               placeholder="Enter quantity to scrap"
+                               required>
+                        <div class="form-text">Enter the quantity of inventory to scrap</div>
+                    </div>
+
+                    <!-- Reason Dropdown -->
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">
+                            <i class="fas fa-exclamation-circle"></i> Scrap Reason
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="reason" name="reason" required>
+                            <option value="">Select reason...</option>
+                            {% for reason in scrap_reasons %}
+                            <option value="{{ reason }}">
+                                {% if reason == 'damaged' %}
+                                    <i class="fas fa-exclamation-triangle"></i> Damaged
+                                {% elif reason == 'expired' %}
+                                    Expired
+                                {% elif reason == 'quality_issue' %}
+                                    Quality Issue
+                                {% elif reason == 'contaminated' %}
+                                    Contaminated
+                                {% elif reason == 'obsolete' %}
+                                    Obsolete
+                                {% elif reason == 'production_defect' %}
+                                    Production Defect
+                                {% elif reason == 'handling_damage' %}
+                                    Handling Damage
+                                {% else %}
+                                    {{ reason.replace('_', ' ').title() }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select the primary reason for scrapping this inventory</div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">
+                            <i class="fas fa-sticky-note"></i> Additional Notes
+                        </label>
+                        <textarea class="form-control"
+                                  id="notes"
+                                  name="notes"
+                                  rows="3"
+                                  placeholder="Enter detailed information about the scrap (e.g., inspection findings, damage description, etc.)"></textarea>
+                        <div class="form-text">Optional detailed information about the scrap</div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card bg-blue-light border-0 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Fields marked with <span class="text-danger">*</span> are required
+                            </small>
+                            <div>
+                                <a href="{{ url_for('scraps.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Create Scrap Record
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle"></i> Scrap Reason Guide
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Damaged:</strong> Physical damage to materials or items</li>
+                    <li><strong>Expired:</strong> Items past their expiration or use-by date</li>
+                    <li><strong>Quality Issue:</strong> Failed quality control or inspection</li>
+                    <li><strong>Contaminated:</strong> Contamination by foreign substances</li>
+                    <li><strong>Obsolete:</strong> No longer usable due to design changes or obsolescence</li>
+                    <li><strong>Production Defect:</strong> Manufacturing or assembly defects</li>
+                    <li><strong>Handling Damage:</strong> Damage during storage or handling</li>
+                    <li><strong>Other:</strong> Any other reason not listed above</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Warning Card -->
+        <div class="alert alert-warning mt-4">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Important:</strong> Scrap records will permanently reduce inventory levels using FIFO (First-In-First-Out) batch consumption.
+            Ensure all information is accurate before submission.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Toggle between Material and Item selection
+    $('input[name="item_type"]').change(function() {
+        const itemType = $(this).val();
+        if (itemType === 'material') {
+            $('#material_selection').show();
+            $('#item_selection').hide();
+            $('#material_id').prop('required', true);
+            $('#item_id').prop('required', false);
+        } else {
+            $('#material_selection').hide();
+            $('#item_selection').show();
+            $('#material_id').prop('required', false);
+            $('#item_id').prop('required', true);
+        }
+    });
+
+    // Load bins when location is selected
+    $('#location_id').change(function() {
+        const selectedOption = $(this).find('option:selected');
+        const bins = selectedOption.data('bins');
+        const binSelect = $('#bin_id');
+
+        binSelect.html('<option value="">No specific bin</option>');
+
+        if (bins && bins.length > 0) {
+            bins.forEach(function(bin) {
+                binSelect.append(
+                    $('<option></option>')
+                        .attr('value', bin.id)
+                        .text(bin.code + (bin.name ? ' - ' + bin.name : ''))
+                );
+            });
+        }
+    });
+
+    // Form validation
+    $('#scrapForm').submit(function(e) {
+        const quantity = parseFloat($('#quantity').val());
+        const reason = $('#reason').val();
+
+        if (!quantity || quantity <= 0) {
+            e.preventDefault();
+            alert('Please enter a valid quantity greater than zero.');
+            $('#quantity').focus();
+            return false;
+        }
+
+        if (!reason) {
+            e.preventDefault();
+            alert('Please select a reason for scrapping.');
+            $('#reason').focus();
+            return false;
+        }
+
+        // Confirmation dialog
+        const confirmMsg = 'Are you sure you want to scrap ' + quantity + ' units?\n\nThis will permanently reduce inventory levels.';
+        if (!confirm(confirmMsg)) {
+            e.preventDefault();
+            return false;
+        }
+
+        return true;
+    });
+});
+</script>
+{% endblock %}

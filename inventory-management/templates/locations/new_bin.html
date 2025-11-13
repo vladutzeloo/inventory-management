@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}New Bin for {{ location.code }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-box"></i> New Bin for Location: <span class="text-primary">{{ location.code }}</span></h2>
+        <p class="text-muted mb-0">
+            <i class="fas fa-warehouse"></i> {{ location.name }}
+        </p>
+    </div>
+    <a href="{{ url_for('locations.bins', id=location.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Bins
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Create New Bin</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('locations.new_bin', id=location.id) }}">
+                    <div class="mb-3">
+                        <label for="bin_code" class="form-label">
+                            Bin Code <span class="text-danger">*</span>
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="bin_code"
+                               name="bin_code"
+                               required
+                               placeholder="e.g., A-01-01"
+                               pattern="[A-Za-z0-9\-_]+"
+                               title="Only letters, numbers, hyphens, and underscores allowed"
+                               maxlength="50"
+                               autofocus>
+                        <div class="form-text">
+                            Unique bin identifier within this location (will be converted to uppercase)
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            Description
+                        </label>
+                        <textarea class="form-control"
+                                  id="description"
+                                  name="description"
+                                  rows="3"
+                                  placeholder="e.g., Top shelf, left side"
+                                  maxlength="200"></textarea>
+                        <div class="form-text">
+                            Optional description to help identify the bin's location or purpose
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="active"
+                                   name="active"
+                                   checked>
+                            <label class="form-check-label" for="active">
+                                <i class="fas fa-check-circle text-success"></i> Active Bin
+                            </label>
+                            <div class="form-text">
+                                Inactive bins won't be available for new transactions
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('locations.bins', id=location.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Bin
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card shadow-sm mt-4 border-primary">
+            <div class="card-body">
+                <h6 class="card-title text-primary">
+                    <i class="fas fa-info-circle"></i> Bin Naming Tips
+                </h6>
+                <ul class="mb-0 small">
+                    <li><strong>Bin Code:</strong> Use a systematic naming convention for easy identification</li>
+                    <li><strong>Examples:</strong>
+                        <ul>
+                            <li><code>A-01-01</code> - Aisle A, Row 01, Position 01</li>
+                            <li><code>FLOOR-A1</code> - Floor storage, Section A1</li>
+                            <li><code>RACK-01-SHELF-02</code> - Rack 01, Shelf 02</li>
+                        </ul>
+                    </li>
+                    <li><strong>Description:</strong> Add details like shelf level, accessibility, or special conditions</li>
+                    <li><strong>Best Practice:</strong> Use consistent naming patterns across all locations for easier management</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Location Context Card -->
+        <div class="card shadow-sm mt-3 border-info">
+            <div class="card-body">
+                <h6 class="card-title text-info">
+                    <i class="fas fa-warehouse"></i> Current Location Details
+                </h6>
+                <div class="row small">
+                    <div class="col-md-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Location:</dt>
+                            <dd class="col-sm-7"><strong>{{ location.code }}</strong> - {{ location.name }}</dd>
+                            <dt class="col-sm-5">Type:</dt>
+                            <dd class="col-sm-7">
+                                {% if location.location_type == 'warehouse' %}
+                                    <span class="badge bg-primary">Warehouse</span>
+                                {% elif location.location_type == 'shipping' %}
+                                    <span class="badge bg-info">Shipping</span>
+                                {% elif location.location_type == 'production' %}
+                                    <span class="badge bg-success">Production</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Zone:</dt>
+                            <dd class="col-sm-7">{{ location.zone or '-' }}</dd>
+                            <dt class="col-sm-5">Status:</dt>
+                            <dd class="col-sm-7">
+                                {% if location.active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-uppercase the bin code field
+document.getElementById('bin_code').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}New Transfer - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-exchange-alt"></i> Create New Transfer</h2>
+            <a href="{{ url_for('transfers.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Transfers
+            </a>
+        </div>
+
+        <div class="card shadow-blue">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle"></i> Transfer Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('transfers.new') }}" id="transferForm">
+                    <!-- Transfer Date -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="transfer_date" class="form-label">
+                                <i class="fas fa-calendar"></i> Transfer Date
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="date"
+                                   class="form-control"
+                                   id="transfer_date"
+                                   name="transfer_date"
+                                   value="{{ today }}"
+                                   required>
+                            <div class="form-text">Date when the transfer occurs</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Item Selection -->
+                    <h5 class="text-primary mb-3"><i class="fas fa-box"></i> What to Transfer</h5>
+                    <div class="row mb-4">
+                        <!-- Item Type -->
+                        <div class="col-md-4">
+                            <label for="item_type" class="form-label">
+                                <i class="fas fa-tags"></i> Type
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="item_type" name="item_type" required>
+                                <option value="">Select Type</option>
+                                <option value="material">Material</option>
+                                <option value="item">Item (Finished Good)</option>
+                            </select>
+                        </div>
+
+                        <!-- Item/Material Selection -->
+                        <div class="col-md-8">
+                            <label for="item_id" class="form-label">
+                                <i class="fas fa-cube"></i> Select Item/Material
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="item_id" name="item_id" required disabled>
+                                <option value="">First select a type...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- From Location -->
+                    <h5 class="text-primary mb-3"><i class="fas fa-map-marker-alt"></i> From (Source)</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="from_location_id" class="form-label">
+                                <i class="fas fa-warehouse"></i> From Location
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select location-select"
+                                    id="from_location_id"
+                                    name="from_location_id"
+                                    data-bin-select="from_bin_id"
+                                    required>
+                                <option value="">Select From Location</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="from_bin_id" class="form-label">
+                                <i class="fas fa-box-open"></i> From Bin (Optional)
+                            </label>
+                            <select class="form-select bin-select"
+                                    id="from_bin_id"
+                                    name="from_bin_id"
+                                    disabled>
+                                <option value="">Select location first...</option>
+                            </select>
+                            <div class="form-text">Optional: Select specific bin within location</div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <i class="fas fa-arrow-down fa-2x text-primary"></i>
+                    </div>
+
+                    <!-- To Location -->
+                    <h5 class="text-primary mb-3"><i class="fas fa-map-marker-alt"></i> To (Destination)</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="to_location_id" class="form-label">
+                                <i class="fas fa-warehouse"></i> To Location
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select location-select"
+                                    id="to_location_id"
+                                    name="to_location_id"
+                                    data-bin-select="to_bin_id"
+                                    required>
+                                <option value="">Select To Location</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="to_bin_id" class="form-label">
+                                <i class="fas fa-box-open"></i> To Bin (Optional)
+                            </label>
+                            <select class="form-select bin-select"
+                                    id="to_bin_id"
+                                    name="to_bin_id"
+                                    disabled>
+                                <option value="">Select location first...</option>
+                            </select>
+                            <div class="form-text">Optional: Select specific bin within location</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Quantity and Details -->
+                    <h5 class="text-primary mb-3"><i class="fas fa-clipboard-list"></i> Transfer Details</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label">
+                                <i class="fas fa-hashtag"></i> Quantity
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="quantity"
+                                   name="quantity"
+                                   placeholder="0.00"
+                                   min="0.01"
+                                   step="0.01"
+                                   required>
+                            <div class="form-text">Quantity to transfer</div>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="reason" class="form-label">
+                                <i class="fas fa-comment"></i> Reason
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="reason"
+                                   name="reason"
+                                   placeholder="e.g., Relocation, Production demand, etc."
+                                   maxlength="200">
+                            <div class="form-text">Brief reason for the transfer</div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">
+                            <i class="fas fa-sticky-note"></i> Notes
+                        </label>
+                        <textarea class="form-control"
+                                  id="notes"
+                                  name="notes"
+                                  rows="3"
+                                  placeholder="Enter any additional notes or details about this transfer..."
+                                  maxlength="1000"></textarea>
+                        <div class="form-text">Additional information (optional)</div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card bg-blue-light border-0 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Fields marked with <span class="text-danger">*</span> are required
+                            </small>
+                            <div>
+                                <a href="{{ url_for('transfers.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="fas fa-exchange-alt"></i> Create Transfer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle"></i> Transfer Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>FIFO Tracking:</strong> The system automatically tracks batches using First-In-First-Out methodology</li>
+                    <li><strong>Available Stock:</strong> Ensure sufficient stock is available at the source location before transferring</li>
+                    <li><strong>Location Selection:</strong> From and To locations must be different</li>
+                    <li><strong>Bins:</strong> Bins are optional but recommended for better tracking within large locations</li>
+                    <li><strong>Immediate Processing:</strong> Transfers are processed immediately and cannot be reversed (only adjusted)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Store all materials and items data
+const materials = {{ materials|tojson }};
+const items = {{ items|tojson }};
+const locations = {{ locations|tojson }};
+
+// Bins data cache
+const binsCache = {};
+
+// Item type change handler
+document.getElementById('item_type').addEventListener('change', function() {
+    const itemSelect = document.getElementById('item_id');
+    const itemType = this.value;
+
+    itemSelect.innerHTML = '<option value="">Select...</option>';
+    itemSelect.disabled = false;
+
+    if (itemType === 'material') {
+        materials.forEach(material => {
+            const option = document.createElement('option');
+            option.value = material.id;
+            option.textContent = `${material.name} (${material.unit_of_measure})`;
+            itemSelect.appendChild(option);
+        });
+    } else if (itemType === 'item') {
+        items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = `${item.name} (${item.unit_of_measure})`;
+            itemSelect.appendChild(option);
+        });
+    } else {
+        itemSelect.disabled = true;
+        itemSelect.innerHTML = '<option value="">First select a type...</option>';
+    }
+});
+
+// Location change handler - Load bins via AJAX
+document.querySelectorAll('.location-select').forEach(locationSelect => {
+    locationSelect.addEventListener('change', async function() {
+        const locationId = this.value;
+        const binSelectId = this.getAttribute('data-bin-select');
+        const binSelect = document.getElementById(binSelectId);
+
+        if (!locationId) {
+            binSelect.innerHTML = '<option value="">Select location first...</option>';
+            binSelect.disabled = true;
+            return;
+        }
+
+        // Show loading state
+        binSelect.innerHTML = '<option value="">Loading bins...</option>';
+        binSelect.disabled = true;
+
+        try {
+            // Check cache first
+            if (binsCache[locationId]) {
+                populateBins(binSelect, binsCache[locationId]);
+                return;
+            }
+
+            // Fetch bins from server
+            const response = await fetch(`/locations/api/bins/${locationId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch bins');
+            }
+
+            const bins = await response.json();
+            binsCache[locationId] = bins;
+            populateBins(binSelect, bins);
+
+        } catch (error) {
+            console.error('Error loading bins:', error);
+            binSelect.innerHTML = '<option value="">No bins (optional)</option>';
+            binSelect.disabled = false;
+        }
+    });
+});
+
+function populateBins(selectElement, bins) {
+    selectElement.innerHTML = '<option value="">No bin (location level)</option>';
+
+    if (bins && bins.length > 0) {
+        bins.forEach(bin => {
+            if (bin.active) {
+                const option = document.createElement('option');
+                option.value = bin.id;
+                option.textContent = bin.bin_code;
+                selectElement.appendChild(option);
+            }
+        });
+    }
+
+    selectElement.disabled = false;
+}
+
+// Form validation
+document.getElementById('transferForm').addEventListener('submit', function(e) {
+    const fromLocationId = document.getElementById('from_location_id').value;
+    const toLocationId = document.getElementById('to_location_id').value;
+    const quantity = parseFloat(document.getElementById('quantity').value);
+
+    // Check if from and to locations are the same
+    if (fromLocationId === toLocationId) {
+        e.preventDefault();
+        alert('From and To locations must be different.');
+        return false;
+    }
+
+    // Validate quantity
+    if (!quantity || quantity <= 0) {
+        e.preventDefault();
+        alert('Please enter a valid quantity greater than 0.');
+        document.getElementById('quantity').focus();
+        return false;
+    }
+
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    return true;
+});
+
+// Initialize bin selects with default option
+window.addEventListener('load', function() {
+    document.querySelectorAll('.bin-select').forEach(select => {
+        if (!select.value) {
+            select.innerHTML = '<option value="">No bin (location level)</option>';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+
+{% block title %}Transfer {{ transfer.transfer_number }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="fas fa-exchange-alt"></i> Transfer Details</h2>
+                <p class="text-muted mb-0">{{ transfer.transfer_number }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('transfers.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Transfers
+                </a>
+            </div>
+        </div>
+
+        <!-- Transfer Overview Card -->
+        <div class="card shadow-blue mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Transfer Overview
+                    </h5>
+                    <span class="badge {% if transfer.status == 'completed' %}bg-success{% elif transfer.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ transfer.status|upper }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Left Column -->
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Transfer Number:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="text-primary">{{ transfer.transfer_number }}</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Transfer Date:</dt>
+                            <dd class="col-sm-7">
+                                <i class="far fa-calendar"></i> {{ transfer.transfer_date.strftime('%Y-%m-%d') }}
+                                <small class="text-muted">{{ transfer.transfer_date.strftime('%H:%M:%S') }}</small>
+                            </dd>
+
+                            <dt class="col-sm-5">Type:</dt>
+                            <dd class="col-sm-7">
+                                {% if transfer.material %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-cube"></i> Material
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-box"></i> Finished Item
+                                    </span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-5">Item/Material:</dt>
+                            <dd class="col-sm-7">
+                                {% if transfer.material %}
+                                    <strong>{{ transfer.material.name }}</strong>
+                                    <br><small class="text-muted">{{ transfer.material.description }}</small>
+                                {% else %}
+                                    <strong>{{ transfer.item.name }}</strong>
+                                    <br><small class="text-muted">{{ transfer.item.description }}</small>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Quantity:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-primary fs-6">{{ "%.2f"|format(transfer.quantity) }}</span>
+                                <span class="text-muted">
+                                    {% if transfer.material %}
+                                        {{ transfer.material.unit_of_measure }}
+                                    {% else %}
+                                        {{ transfer.item.unit_of_measure }}
+                                    {% endif %}
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-5">Reason:</dt>
+                            <dd class="col-sm-7">
+                                {% if transfer.reason %}
+                                    {{ transfer.reason }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">No reason provided</span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-5">Created By:</dt>
+                            <dd class="col-sm-7">
+                                <i class="fas fa-user"></i> {{ transfer.created_by }}
+                                <br><small class="text-muted">{{ transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                            </dd>
+
+                            <dt class="col-sm-5">Status:</dt>
+                            <dd class="col-sm-7">
+                                {% if transfer.status == 'completed' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> Completed
+                                    </span>
+                                {% elif transfer.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock"></i> Pending
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ transfer.status }}</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Notes Section -->
+                {% if transfer.notes %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">
+                            <strong><i class="fas fa-sticky-note"></i> Notes:</strong>
+                            <p class="mb-0 mt-2">{{ transfer.notes }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- From/To Location Cards -->
+        <div class="row mb-4">
+            <!-- From Location -->
+            <div class="col-md-6">
+                <div class="card h-100 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-arrow-up"></i> From (Source)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="mb-0">
+                            <dt>Location:</dt>
+                            <dd>
+                                <strong class="text-primary">{{ transfer.from_location.code }}</strong>
+                                - {{ transfer.from_location.name }}
+                            </dd>
+
+                            <dt>Type:</dt>
+                            <dd>
+                                {% if transfer.from_location.location_type == 'warehouse' %}
+                                    <span class="badge bg-primary">Warehouse</span>
+                                {% elif transfer.from_location.location_type == 'shipping' %}
+                                    <span class="badge bg-info">Shipping</span>
+                                {% elif transfer.from_location.location_type == 'production' %}
+                                    <span class="badge bg-success">Production</span>
+                                {% endif %}
+                            </dd>
+
+                            {% if transfer.from_location.zone %}
+                            <dt>Zone:</dt>
+                            <dd><span class="badge bg-secondary">{{ transfer.from_location.zone }}</span></dd>
+                            {% endif %}
+
+                            <dt>Bin:</dt>
+                            <dd>
+                                {% if transfer.from_bin %}
+                                    <i class="fas fa-box-open"></i> {{ transfer.from_bin.bin_code }}
+                                    {% if transfer.from_bin.description %}
+                                        <br><small class="text-muted">{{ transfer.from_bin.description }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted fst-italic">Location level (no specific bin)</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- To Location -->
+            <div class="col-md-6">
+                <div class="card h-100 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-arrow-down"></i> To (Destination)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="mb-0">
+                            <dt>Location:</dt>
+                            <dd>
+                                <strong class="text-primary">{{ transfer.to_location.code }}</strong>
+                                - {{ transfer.to_location.name }}
+                            </dd>
+
+                            <dt>Type:</dt>
+                            <dd>
+                                {% if transfer.to_location.location_type == 'warehouse' %}
+                                    <span class="badge bg-primary">Warehouse</span>
+                                {% elif transfer.to_location.location_type == 'shipping' %}
+                                    <span class="badge bg-info">Shipping</span>
+                                {% elif transfer.to_location.location_type == 'production' %}
+                                    <span class="badge bg-success">Production</span>
+                                {% endif %}
+                            </dd>
+
+                            {% if transfer.to_location.zone %}
+                            <dt>Zone:</dt>
+                            <dd><span class="badge bg-secondary">{{ transfer.to_location.zone }}</span></dd>
+                            {% endif %}
+
+                            <dt>Bin:</dt>
+                            <dd>
+                                {% if transfer.to_bin %}
+                                    <i class="fas fa-box-open"></i> {{ transfer.to_bin.bin_code }}
+                                    {% if transfer.to_bin.description %}
+                                        <br><small class="text-muted">{{ transfer.to_bin.description }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted fst-italic">Location level (no specific bin)</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FIFO Batch Consumption Details -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-layer-group"></i> FIFO Batch Consumption Details
+                    <span class="badge bg-light text-primary ms-2">{{ transfer_batches|length }} Batches</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if transfer_batches %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Batch Number</th>
+                                <th>Received Date</th>
+                                <th>Original Location</th>
+                                <th class="text-end">Qty Transferred</th>
+                                <th class="text-end">Cost Per Unit</th>
+                                <th class="text-end">Total Cost</th>
+                                <th class="text-end">Batch Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set total_cost = 0 %}
+                            {% for tb in transfer_batches %}
+                            {% set batch_total = tb.quantity_transferred * tb.cost_per_unit %}
+                            {% set total_cost = total_cost + batch_total %}
+                            <tr>
+                                <td>
+                                    <strong class="text-primary">{{ tb.batch.batch_number }}</strong>
+                                    {% if tb.batch.po_number %}
+                                        <br><small class="text-muted">PO: {{ tb.batch.po_number }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>
+                                        <i class="far fa-calendar"></i> {{ tb.batch.received_date.strftime('%Y-%m-%d') }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <strong>{{ tb.batch.location.code }}</strong>
+                                    {% if tb.batch.bin %}
+                                        <span class="text-muted">/ {{ tb.batch.bin.bin_code }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge bg-primary">{{ "%.2f"|format(tb.quantity_transferred) }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="text-muted">${{ "%.2f"|format(tb.cost_per_unit) }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong>${{ "%.2f"|format(batch_total) }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    {% if tb.batch.current_quantity > 0 %}
+                                        <span class="badge bg-success">{{ "%.2f"|format(tb.batch.current_quantity) }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0.00</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="5" class="text-end">Total Transfer Cost:</th>
+                                <th class="text-end">
+                                    <span class="text-primary fs-5">${{ "%.2f"|format(total_cost) }}</span>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No batch consumption details available.</p>
+                    <small class="text-muted">This may occur if the transfer is still pending.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- FIFO Information Card -->
+        {% if transfer_batches %}
+        <div class="card mt-4 border-info">
+            <div class="card-body">
+                <h6 class="text-info mb-3">
+                    <i class="fas fa-info-circle"></i> FIFO Batch Processing Information
+                </h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="small mb-2">
+                            <strong>Oldest Batch:</strong> {{ transfer_batches[0].batch.batch_number }}
+                            ({{ transfer_batches[0].batch.received_date.strftime('%Y-%m-%d') }})
+                        </p>
+                        <p class="small mb-2">
+                            <strong>Batches Consumed:</strong> {{ transfer_batches|length }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="small mb-2">
+                            <strong>Average Cost:</strong> ${{ "%.2f"|format(total_cost / transfer.quantity) }} per unit
+                        </p>
+                        <p class="small mb-0">
+                            <strong>FIFO Method:</strong> Automatically consumed oldest batches first
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Summary Statistics -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Quantity Transferred</h6>
+                        <h3 class="mb-0">{{ "%.2f"|format(transfer.quantity) }}</h3>
+                        <small>
+                            {% if transfer.material %}
+                                {{ transfer.material.unit_of_measure }}
+                            {% else %}
+                                {{ transfer.item.unit_of_measure }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Batches Used</h6>
+                        <h3 class="mb-0">{{ transfer_batches|length }}</h3>
+                        <small>FIFO batches</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Total Value</h6>
+                        {% if transfer_batches %}
+                        <h3 class="mb-0">${{ "%.2f"|format(total_cost) }}</h3>
+                        {% else %}
+                        <h3 class="mb-0">-</h3>
+                        {% endif %}
+                        <small>Transfer cost</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">Avg Unit Cost</h6>
+                        {% if transfer_batches and transfer.quantity > 0 %}
+                        <h3 class="mb-0">${{ "%.2f"|format(total_cost / transfer.quantity) }}</h3>
+                        {% else %}
+                        <h3 class="mb-0">-</h3>
+                        {% endif %}
+                        <small>Per unit</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Print functionality
+function printTransfer() {
+    window.print();
+}
+
+// Add print styles
+const style = document.createElement('style');
+style.textContent = `
+    @media print {
+        .btn, .navbar, footer { display: none; }
+        .card { break-inside: avoid; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

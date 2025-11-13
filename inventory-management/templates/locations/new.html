@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}New Location - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-warehouse"></i> New Location</h2>
+    <a href="{{ url_for('locations.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Locations
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Create New Location</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('locations.new') }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="code" class="form-label">
+                                Location Code <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="code"
+                                   name="code"
+                                   required
+                                   placeholder="e.g., WH-01"
+                                   pattern="[A-Za-z0-9\-_]+"
+                                   title="Only letters, numbers, hyphens, and underscores allowed"
+                                   maxlength="50">
+                            <div class="form-text">
+                                Unique identifier (will be converted to uppercase)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">
+                                Location Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="name"
+                                   name="name"
+                                   required
+                                   placeholder="e.g., Main Warehouse"
+                                   maxlength="200">
+                            <div class="form-text">
+                                Descriptive name for the location
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="location_type" class="form-label">
+                                Location Type <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="location_type" name="location_type" required>
+                                <option value="">Select type...</option>
+                                <option value="warehouse">
+                                    <i class="fas fa-warehouse"></i> Warehouse
+                                </option>
+                                <option value="shipping">
+                                    <i class="fas fa-shipping-fast"></i> Shipping
+                                </option>
+                                <option value="production">
+                                    <i class="fas fa-industry"></i> Production
+                                </option>
+                            </select>
+                            <div class="form-text">
+                                Type of storage location
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="zone" class="form-label">
+                                Zone
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="zone"
+                                   name="zone"
+                                   placeholder="e.g., Building A, Floor 2"
+                                   maxlength="100">
+                            <div class="form-text">
+                                Optional grouping/area (e.g., building, floor)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="active"
+                                   name="active"
+                                   checked>
+                            <label class="form-check-label" for="active">
+                                <i class="fas fa-check-circle text-success"></i> Active Location
+                            </label>
+                            <div class="form-text">
+                                Inactive locations won't be available for new transactions
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('locations.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Location
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card shadow-sm mt-4 border-primary">
+            <div class="card-body">
+                <h6 class="card-title text-primary">
+                    <i class="fas fa-info-circle"></i> Location Information
+                </h6>
+                <ul class="mb-0 small">
+                    <li><strong>Location Code:</strong> A unique identifier used for quick reference (e.g., WH-01, SHIP-A)</li>
+                    <li><strong>Location Name:</strong> A descriptive name that helps identify the location's purpose</li>
+                    <li><strong>Location Types:</strong>
+                        <ul>
+                            <li><strong>Warehouse:</strong> Long-term storage facilities</li>
+                            <li><strong>Shipping:</strong> Outbound staging areas</li>
+                            <li><strong>Production:</strong> Manufacturing or assembly areas</li>
+                        </ul>
+                    </li>
+                    <li><strong>Zone:</strong> Optional field to group locations by building, floor, or area</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-uppercase the code field
+document.getElementById('code').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+});
+
+// Add icons to select options (visual enhancement)
+document.getElementById('location_type').addEventListener('change', function(e) {
+    const icon = e.target.selectedOptions[0].getAttribute('data-icon');
+    if (icon) {
+        e.target.style.fontWeight = 'bold';
+    }
+});
+</script>
+{% endblock %}
