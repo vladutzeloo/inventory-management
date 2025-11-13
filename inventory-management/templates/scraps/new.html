@@ -92,7 +92,7 @@
                             <select class="form-select" id="location_id" name="location_id" required>
                                 <option value="">Choose location...</option>
                                 {% for location in locations %}
-                                <option value="{{ location.id }}" data-bins='{{ location.bins | tojson }}'>
+                                <option value="{{ location.id }}" data-bins='[{% for bin in location.bins %}{"id":{{ bin.id }},"bin_code":"{{ bin.bin_code|e }}"}{% if not loop.last %},{% endif %}{% endfor %}]'>
                                     {{ location.code }} - {{ location.name }}
                                 </option>
                                 {% endfor %}
