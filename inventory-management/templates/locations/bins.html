@@ -5,21 +5,48 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2><i class="fas fa-box"></i> Bins for Location: <span class="text-primary">{{ location.code }}</span></h2>
-        <p class="text-muted mb-0">
-            <i class="fas fa-warehouse"></i> {{ location.name }}
-            {% if location.zone %}
-                <span class="badge bg-secondary">{{ location.zone }}</span>
-            {% endif %}
+        <h2><i class="fas fa-layer-group"></i> Bins in {{ location.code }}</h2>
+        <p class="text-white mb-0">
+            <i class="fas fa-warehouse"></i> {{ location.name }} |
+            <i class="fas fa-map-marker-alt"></i> {{ location.location_type.title() }}
+            {% if location.zone %} | Zone: {{ location.zone }}{% endif %}
         </p>
     </div>
     <div>
-        <a href="{{ url_for('locations.new_bin', id=location.id) }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> New Bin
-        </a>
-        <a href="{{ url_for('locations.index') }}" class="btn btn-secondary">
+        <a href="{{ url_for('locations.index') }}" class="btn btn-outline-light me-2">
             <i class="fas fa-arrow-left"></i> Back to Locations
         </a>
+        <a href="{{ url_for('locations.new_bin', id=location.id) }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Bin
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ bins|length }}</h3>
+                <small>Total Bins</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ bins|selectattr('1', 'gt', 0)|list|length }}</h3>
+                <small>Bins with Stock</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ bins|length - (bins|selectattr('1', 'gt', 0)|list|length) }}</h3>
+                <small>Empty Bins</small>
+            </div>
+        </div>
     </div>
 </div>
 
