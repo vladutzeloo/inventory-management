@@ -1,0 +1,117 @@
+/* Custom styles for Inventory Management System */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container-fluid {
+    flex: 1;
+}
+
+/* Dashboard cards */
+.metric-card {
+    transition: transform 0.2s;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.metric-icon {
+    font-size: 2.5rem;
+    opacity: 0.7;
+}
+
+/* Tables */
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+/* Buttons */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+}
+
+/* Forms */
+.form-label {
+    font-weight: 500;
+}
+
+/* Search bars */
+.search-bar {
+    max-width: 400px;
+}
+
+/* Status indicators */
+.status-active {
+    color: #28a745;
+}
+
+.status-inactive {
+    color: #dc3545;
+}
+
+/* Low stock alerts */
+.alert-low-stock {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+/* Pagination */
+.pagination {
+    margin-top: 1rem;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Responsive navbar */
+@media (max-width: 768px) {
+    .navbar-nav {
+        margin-top: 1rem;
+    }
+}
+
+/* Dynamic row styling */
+.dynamic-row {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+}
+
+.remove-row-btn {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Number inputs */
+input[type="number"] {
+    text-align: right;
+}
+
+/* Card header actions */
+.card-header .btn {
+    margin-left: 0.5rem;
+}
