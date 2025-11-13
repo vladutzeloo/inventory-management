@@ -150,14 +150,30 @@ $(document).ready(function() {
     let itemCounter = 0;
 
     // Prepare data
-    const materials = {{ materials|tojson }};
-    const items = {{ items|tojson }};
-    const locations = {{ locations|tojson }};
+    const materials = [
+        {% for material in materials %}
+        {id: {{ material.id }}, name: "{{ material.name|e }}", unit_of_measure: "{{ material.unit_of_measure|e }}"}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const items = [
+        {% for item in items %}
+        {id: {{ item.id }}, name: "{{ item.name|e }}", unit_of_measure: "{{ item.unit_of_measure|e }}"}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const locations = [
+        {% for location in locations %}
+        {id: {{ location.id }}, code: "{{ location.code|e }}", name: "{{ location.name|e }}"}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
     // Build bins by location lookup
     const binsByLocation = {};
     {% for location in locations %}
-    binsByLocation[{{ location.id }}] = {{ location.bins|tojson }};
+    binsByLocation[{{ location.id }}] = [
+        {% for bin in location.bins %}
+        {id: {{ bin.id }}, bin_code: "{{ bin.bin_code|e }}"}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
     {% endfor %}
 
     // Add first item automatically
