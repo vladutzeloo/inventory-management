@@ -24,21 +24,16 @@ body {
     flex: 1;
 }
 
-.container-fluid > * {
+/* Default white text on blue background */
+.container-fluid > h1,
+.container-fluid > h2,
+.container-fluid > h3,
+.container-fluid > h4,
+.container-fluid > h5,
+.container-fluid > h6,
+.container-fluid > p,
+.container-fluid > div:not(.card) {
     color: white;
-}
-
-/* Text color overrides for better visibility */
-p, span, div, label, a:not(.btn) {
-    color: white;
-}
-
-.card-body p,
-.card-body span:not(.badge),
-.card-body div,
-.card-body label,
-.card-body a:not(.btn) {
-    color: #1e293b;
 }
 
 /* ============================================
@@ -112,7 +107,23 @@ p, span, div, label, a:not(.btn) {
 
 .card-body {
     background-color: white;
-    color: #1e293b;
+    color: #1e293b !important;
+}
+
+.card-body * {
+    color: #1e293b !important;
+}
+
+.card-body .badge {
+    color: white !important;
+}
+
+.card-body .btn {
+    color: white !important;
+}
+
+.card-body a.btn {
+    color: white !important;
 }
 
 /* ============================================
@@ -255,7 +266,19 @@ p, span, div, label, a:not(.btn) {
 }
 
 .table tbody td {
-    color: #1e293b;
+    color: #1e293b !important;
+}
+
+.table tbody td .badge {
+    color: white !important;
+}
+
+.table tbody td a {
+    color: var(--secondary-blue) !important;
+}
+
+.table tbody td a:hover {
+    color: var(--primary-blue) !important;
 }
 
 .table-hover tbody tr {
@@ -269,8 +292,12 @@ p, span, div, label, a:not(.btn) {
 }
 
 .table-hover tbody tr:hover td {
-    color: var(--primary-blue);
+    color: var(--primary-blue) !important;
     font-weight: 500;
+}
+
+.table-hover tbody tr:hover td .badge {
+    color: white !important;
 }
 
 /* ============================================
@@ -283,6 +310,11 @@ p, span, div, label, a:not(.btn) {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+.card-body .form-label {
+    color: var(--primary-blue) !important;
+    text-shadow: none;
+}
+
 .form-control:focus,
 .form-select:focus {
     border-color: var(--secondary-blue);
@@ -293,11 +325,16 @@ p, span, div, label, a:not(.btn) {
 .form-select {
     border: 1px solid #cbd5e1;
     transition: all 0.2s ease;
+    color: #1e293b;
 }
 
 .form-text {
     color: white !important;
     opacity: 0.9;
+}
+
+.card-body .form-text {
+    color: #64748b !important;
 }
 
 /* ============================================
@@ -520,7 +557,7 @@ h1, h2, h3, h4, h5, h6 {
 .card-body h4,
 .card-body h5,
 .card-body h6 {
-    color: var(--primary-blue);
+    color: var(--primary-blue) !important;
     text-shadow: none;
 }
 
@@ -528,6 +565,12 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 2px solid var(--secondary-blue);
     padding-bottom: 0.5rem;
     margin-bottom: 1.5rem;
+}
+
+/* Page title outside cards */
+.container-fluid > .d-flex h2,
+.container-fluid > .d-flex h1 {
+    color: white !important;
 }
 
 /* ============================================
