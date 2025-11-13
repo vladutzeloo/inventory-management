@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Bins for {{ location.code }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-box"></i> Bins for Location: <span class="text-primary">{{ location.code }}</span></h2>
+        <p class="text-muted mb-0">
+            <i class="fas fa-warehouse"></i> {{ location.name }}
+            {% if location.zone %}
+                <span class="badge bg-secondary">{{ location.zone }}</span>
+            {% endif %}
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('locations.new_bin', id=location.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Bin
+        </a>
+        <a href="{{ url_for('locations.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Locations
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Bins in {{ location.code }}</h5>
+            <span class="badge bg-light text-primary">{{ bins|length }} Total</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if bins %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Bin Code</th>
+                        <th>Description</th>
+                        <th class="text-center">Items in Stock</th>
+                        <th class="text-center">Total Quantity</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bin, inventory_count, total_qty in bins %}
+                    <tr>
+                        <td>
+                            <strong class="text-primary">
+                                <i class="fas fa-box-open"></i> {{ bin.bin_code }}
+                            </strong>
+                        </td>
+                        <td>
+                            {% if bin.description %}
+                                {{ bin.description }}
+                            {% else %}
+                                <span class="text-muted fst-italic">No description</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill">{{ inventory_count }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-success rounded-pill">{{ "%.2f"|format(total_qty) }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if bin.active %}
+                                <span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-ban"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('locations.edit_bin', id=bin.id) }}"
+                                   class="btn btn-sm btn-primary"
+                                   title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-sm btn-danger"
+                                        onclick="confirmDelete('{{ bin.bin_code }}', {{ bin.id }})"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No bins found for this location. Create your first bin to get started.</p>
+            <a href="{{ url_for('locations.new_bin', id=location.id) }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Bin
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bin Statistics -->
+{% if bins %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Total Bins</h6>
+                        <h2 class="mb-0">{{ bins|length }}</h2>
+                    </div>
+                    <div class="opacity-50">
+                        <i class="fas fa-box fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Active Bins</h6>
+                        <h2 class="mb-0">{{ bins|selectattr('0.active')|list|length }}</h2>
+                    </div>
+                    <div class="opacity-50">
+                        <i class="fas fa-check-circle fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Bins with Stock</h6>
+                        <h2 class="mb-0">{{ bins|selectattr('1', 'greaterthan', 0)|list|length }}</h2>
+                    </div>
+                    <div class="opacity-50">
+                        <i class="fas fa-boxes fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Location Summary Card -->
+<div class="card shadow-sm mt-4 border-info">
+    <div class="card-body">
+        <h6 class="card-title text-info">
+            <i class="fas fa-info-circle"></i> Location Summary
+        </h6>
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row small mb-0">
+                    <dt class="col-sm-5">Location Code:</dt>
+                    <dd class="col-sm-7"><strong>{{ location.code }}</strong></dd>
+                    <dt class="col-sm-5">Location Name:</dt>
+                    <dd class="col-sm-7">{{ location.name }}</dd>
+                    <dt class="col-sm-5">Type:</dt>
+                    <dd class="col-sm-7">
+                        {% if location.location_type == 'warehouse' %}
+                            <span class="badge bg-primary">Warehouse</span>
+                        {% elif location.location_type == 'shipping' %}
+                            <span class="badge bg-info">Shipping</span>
+                        {% elif location.location_type == 'production' %}
+                            <span class="badge bg-success">Production</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row small mb-0">
+                    <dt class="col-sm-5">Zone:</dt>
+                    <dd class="col-sm-7">{{ location.zone or '-' }}</dd>
+                    <dt class="col-sm-5">Status:</dt>
+                    <dd class="col-sm-7">
+                        {% if location.active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </dd>
+                    <dt class="col-sm-5">Actions:</dt>
+                    <dd class="col-sm-7">
+                        <a href="{{ url_for('locations.edit', id=location.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit Location
+                        </a>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<form id="deleteForm" method="POST" style="display: none;">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(binCode, binId) {
+    if (confirm(`Are you sure you want to delete bin "${binCode}"?\n\nThis action cannot be undone.`)) {
+        const form = document.getElementById('deleteForm');
+        form.action = `/locations/bins/${binId}/delete`;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

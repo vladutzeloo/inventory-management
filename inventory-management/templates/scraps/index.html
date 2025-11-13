@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Scrap Records - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-trash"></i> Scrap Records</h2>
+    <div>
+        <a href="{{ url_for('scraps.new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Scrap Record
+        </a>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('scraps.index') }}" class="row g-3">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search text-blue"></i>
+                    </span>
+                    <input type="text"
+                           class="form-control"
+                           name="search"
+                           placeholder="Search scraps by scrap number..."
+                           value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{{ url_for('scraps.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scraps Table -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i> Scrap Records List
+            <span class="badge bg-light text-primary ms-2">{{ pagination.total }} Total</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if scraps %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Scrap #</th>
+                        <th>Date</th>
+                        <th>Item</th>
+                        <th>Location</th>
+                        <th>Bin</th>
+                        <th class="text-end">Quantity</th>
+                        <th>Reason</th>
+                        <th>Created By</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scrap in scraps %}
+                    <tr onclick="window.location='{{ url_for('scraps.view', id=scrap.id) }}';" style="cursor: pointer;">
+                        <td>
+                            <strong class="text-primary">{{ scrap.scrap_number }}</strong>
+                        </td>
+                        <td>
+                            <small>{{ scrap.scrap_date.strftime('%Y-%m-%d') }}</small>
+                        </td>
+                        <td>
+                            {% if scrap.material_id %}
+                            <i class="fas fa-cube text-info"></i> {{ scrap.material.name }}
+                            {% else %}
+                            <i class="fas fa-box text-success"></i> {{ scrap.item.name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ scrap.location.code }}</span>
+                        </td>
+                        <td>
+                            {% if scrap.bin_id %}
+                            <span class="badge bg-info">{{ scrap.bin.code }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <span class="badge bg-danger">{{ scrap.quantity }}</span>
+                        </td>
+                        <td>
+                            {% if scrap.reason == 'damaged' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Damaged
+                            </span>
+                            {% elif scrap.reason == 'expired' %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-calendar-times"></i> Expired
+                            </span>
+                            {% elif scrap.reason == 'quality_issue' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-times-circle"></i> Quality Issue
+                            </span>
+                            {% elif scrap.reason == 'contaminated' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-biohazard"></i> Contaminated
+                            </span>
+                            {% elif scrap.reason == 'obsolete' %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-archive"></i> Obsolete
+                            </span>
+                            {% elif scrap.reason == 'production_defect' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-wrench"></i> Production Defect
+                            </span>
+                            {% elif scrap.reason == 'handling_damage' %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-hand-paper"></i> Handling Damage
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-question"></i> {{ scrap.reason.replace('_', ' ').title() }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ scrap.created_by }}</small>
+                        </td>
+                        <td class="text-center" onclick="event.stopPropagation();">
+                            <a href="{{ url_for('scraps.view', id=scrap.id) }}"
+                               class="btn btn-sm btn-outline-primary"
+                               title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-trash fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No scrap records found.</p>
+            <a href="{{ url_for('scraps.new') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create First Scrap Record
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-light">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('scraps.index', page=pagination.prev_num, search=search) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('scraps.index', page=page_num, search=search) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('scraps.index', page=pagination.next_num, search=search) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} -
+                {{ min(pagination.page * pagination.per_page, pagination.total) }} of {{ pagination.total }} scrap records
+            </small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

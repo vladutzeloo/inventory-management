@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}New Receipt - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus-circle"></i> Create New Receipt
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('receipts.new') }}" id="receiptForm" novalidate>
+                    <!-- Receipt Header Information -->
+                    <div class="card mb-4 bg-blue-light">
+                        <div class="card-body">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-info-circle"></i> Receipt Information
+                            </h5>
+                            <div class="row">
+                                <!-- Receipt Date -->
+                                <div class="col-md-4 mb-3">
+                                    <label for="receipt_date" class="form-label">
+                                        <i class="fas fa-calendar text-primary"></i> Receipt Date <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="receipt_date"
+                                           name="receipt_date"
+                                           value="{{ today }}"
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Please select a receipt date.
+                                    </div>
+                                </div>
+
+                                <!-- PO Number -->
+                                <div class="col-md-4 mb-3">
+                                    <label for="po_number" class="form-label">
+                                        <i class="fas fa-file-invoice text-primary"></i> PO Number
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="po_number"
+                                           name="po_number"
+                                           maxlength="100"
+                                           placeholder="Enter PO number">
+                                </div>
+
+                                <!-- Supplier Name -->
+                                <div class="col-md-4 mb-3">
+                                    <label for="supplier_name" class="form-label">
+                                        <i class="fas fa-truck text-primary"></i> Supplier Name
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="supplier_name"
+                                           name="supplier_name"
+                                           maxlength="200"
+                                           placeholder="Enter supplier name">
+                                </div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="mb-0">
+                                <label for="notes" class="form-label">
+                                    <i class="fas fa-sticky-note text-primary"></i> Notes
+                                </label>
+                                <textarea class="form-control"
+                                          id="notes"
+                                          name="notes"
+                                          rows="2"
+                                          placeholder="Enter any additional notes..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Items -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-boxes"></i> Receipt Items
+                            </h5>
+                            <button type="button" class="btn btn-light btn-sm" id="addItemBtn">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="itemsContainer">
+                                <!-- Dynamic rows will be added here -->
+                            </div>
+                            <div class="text-center text-muted py-3" id="emptyMessage">
+                                <i class="fas fa-box-open fa-2x mb-2"></i>
+                                <p>No items added yet. Click "Add Item" to start.</p>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-blue-light">
+                            <div class="row">
+                                <div class="col-md-6 offset-md-6">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong class="text-primary">Total Value:</strong>
+                                        <h4 class="text-success mb-0" id="totalValue">$0.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="item_count" id="item_count" value="0">
+
+                    <!-- Form Actions -->
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('receipts.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save"></i> Create Receipt
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-body bg-light">
+                <h6 class="text-primary">
+                    <i class="fas fa-info-circle"></i> Help
+                </h6>
+                <ul class="mb-0 small">
+                    <li><strong>Receipt Date:</strong> The date when goods were received</li>
+                    <li><strong>PO Number:</strong> External purchase order reference (optional)</li>
+                    <li><strong>Item Type:</strong> Select whether you're receiving a Material or Item</li>
+                    <li><strong>Supplier Batch:</strong> Batch number from supplier for traceability</li>
+                    <li><strong>Location/Bin:</strong> Where the received goods will be stored</li>
+                    <li><strong>Cost per Unit:</strong> Unit cost for FIFO batch costing</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    let itemCounter = 0;
+
+    // Prepare data
+    const materials = {{ materials|tojson }};
+    const items = {{ items|tojson }};
+    const locations = {{ locations|tojson }};
+
+    // Build bins by location lookup
+    const binsByLocation = {};
+    {% for location in locations %}
+    binsByLocation[{{ location.id }}] = {{ location.bins|tojson }};
+    {% endfor %}
+
+    // Add first item automatically
+    addItem();
+
+    // Add item button handler
+    $('#addItemBtn').click(function() {
+        addItem();
+    });
+
+    function addItem() {
+        const rowIndex = itemCounter++;
+        $('#emptyMessage').hide();
+
+        const rowHtml = `
+            <div class="dynamic-row" id="row_${rowIndex}">
+                <button type="button" class="btn btn-danger btn-sm remove-row-btn" onclick="removeRow(${rowIndex})">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div class="row">
+                    <!-- Item Type -->
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-cube text-primary"></i> Type <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select item-type-select"
+                                name="item_type_${rowIndex}"
+                                id="item_type_${rowIndex}"
+                                required
+                                onchange="updateItemSelector(${rowIndex})">
+                            <option value="">Select...</option>
+                            <option value="material">Material</option>
+                            <option value="item">Item</option>
+                        </select>
+                    </div>
+
+                    <!-- Item/Material Selector -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-box text-primary"></i> Item/Material <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select"
+                                name="item_id_${rowIndex}"
+                                id="item_id_${rowIndex}"
+                                required
+                                disabled>
+                            <option value="">Select type first...</option>
+                        </select>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-warehouse text-primary"></i> Location <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select location-select"
+                                name="location_id_${rowIndex}"
+                                id="location_id_${rowIndex}"
+                                required
+                                onchange="updateBinSelector(${rowIndex})">
+                            <option value="">Select...</option>
+                            ${locations.map(loc =>
+                                `<option value="${loc.id}">${loc.code} - ${loc.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+
+                    <!-- Bin -->
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-box-open text-primary"></i> Bin
+                        </label>
+                        <select class="form-select bin-select"
+                                name="bin_id_${rowIndex}"
+                                id="bin_id_${rowIndex}"
+                                disabled>
+                            <option value="">Select location...</option>
+                        </select>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-hashtag text-primary"></i> Quantity <span class="text-danger">*</span>
+                        </label>
+                        <input type="number"
+                               class="form-control quantity-input"
+                               name="quantity_${rowIndex}"
+                               id="quantity_${rowIndex}"
+                               step="0.01"
+                               min="0.01"
+                               required
+                               onchange="calculateTotal()">
+                    </div>
+
+                    <!-- Cost per Unit -->
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-dollar-sign text-primary"></i> Cost/Unit <span class="text-danger">*</span>
+                        </label>
+                        <input type="number"
+                               class="form-control cost-input"
+                               name="cost_per_unit_${rowIndex}"
+                               id="cost_per_unit_${rowIndex}"
+                               step="0.01"
+                               min="0"
+                               required
+                               onchange="calculateTotal()">
+                    </div>
+
+                    <!-- Supplier Batch -->
+                    <div class="col-md-3 mb-0">
+                        <label class="form-label">
+                            <i class="fas fa-barcode text-primary"></i> Supplier Batch
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               name="supplier_batch_${rowIndex}"
+                               maxlength="100"
+                               placeholder="Supplier batch number">
+                    </div>
+
+                    <!-- Line Total -->
+                    <div class="col-md-2 mb-0">
+                        <label class="form-label">
+                            <i class="fas fa-calculator text-primary"></i> Line Total
+                        </label>
+                        <input type="text"
+                               class="form-control bg-light"
+                               id="line_total_${rowIndex}"
+                               readonly
+                               value="$0.00">
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('#itemsContainer').append(rowHtml);
+        updateItemCount();
+    }
+
+    // Remove row function (global scope)
+    window.removeRow = function(rowIndex) {
+        $(`#row_${rowIndex}`).remove();
+        updateItemCount();
+        calculateTotal();
+
+        if ($('.dynamic-row').length === 0) {
+            $('#emptyMessage').show();
+        }
+    };
+
+    // Update item selector based on type
+    window.updateItemSelector = function(rowIndex) {
+        const itemType = $(`#item_type_${rowIndex}`).val();
+        const itemSelector = $(`#item_id_${rowIndex}`);
+
+        itemSelector.empty();
+
+        if (itemType === 'material') {
+            itemSelector.prop('disabled', false);
+            itemSelector.append('<option value="">Select Material...</option>');
+            materials.forEach(mat => {
+                itemSelector.append(`<option value="${mat.id}">${mat.name} (${mat.unit_of_measure})</option>`);
+            });
+        } else if (itemType === 'item') {
+            itemSelector.prop('disabled', false);
+            itemSelector.append('<option value="">Select Item...</option>');
+            items.forEach(item => {
+                itemSelector.append(`<option value="${item.id}">${item.name} (${item.unit_of_measure})</option>`);
+            });
+        } else {
+            itemSelector.prop('disabled', true);
+            itemSelector.append('<option value="">Select type first...</option>');
+        }
+    };
+
+    // Update bin selector based on location
+    window.updateBinSelector = function(rowIndex) {
+        const locationId = $(`#location_id_${rowIndex}`).val();
+        const binSelector = $(`#bin_id_${rowIndex}`);
+
+        binSelector.empty();
+
+        if (locationId && binsByLocation[locationId]) {
+            binSelector.prop('disabled', false);
+            binSelector.append('<option value="">No Bin</option>');
+            binsByLocation[locationId].forEach(bin => {
+                binSelector.append(`<option value="${bin.id}">${bin.bin_code}</option>`);
+            });
+        } else {
+            binSelector.prop('disabled', true);
+            binSelector.append('<option value="">Select location...</option>');
+        }
+    };
+
+    // Calculate total
+    window.calculateTotal = function() {
+        let total = 0;
+
+        $('.dynamic-row').each(function() {
+            const rowId = $(this).attr('id').split('_')[1];
+            const quantity = parseFloat($(`#quantity_${rowId}`).val()) || 0;
+            const cost = parseFloat($(`#cost_per_unit_${rowId}`).val()) || 0;
+            const lineTotal = quantity * cost;
+
+            $(`#line_total_${rowId}`).val('$' + lineTotal.toFixed(2));
+            total += lineTotal;
+        });
+
+        $('#totalValue').text('$' + total.toFixed(2));
+    };
+
+    function updateItemCount() {
+        $('#item_count').val($('.dynamic-row').length);
+    }
+
+    // Form validation
+    $('#receiptForm').on('submit', function(e) {
+        if ($('.dynamic-row').length === 0) {
+            e.preventDefault();
+            alert('Please add at least one receipt item.');
+            return false;
+        }
+
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        $(this).addClass('was-validated');
+    });
+});
+</script>
+{% endblock %}

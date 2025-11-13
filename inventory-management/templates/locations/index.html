@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Locations - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-warehouse"></i> Locations</h2>
+    <a href="{{ url_for('locations.new') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> New Location
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-list"></i> All Locations</h5>
+    </div>
+    <div class="card-body">
+        {% if locations %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Zone</th>
+                        <th class="text-center">Bins</th>
+                        <th class="text-center">Items in Stock</th>
+                        <th class="text-center">Total Quantity</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for location, inventory_count, total_qty, bin_count in locations %}
+                    <tr>
+                        <td>
+                            <strong class="text-primary">{{ location.code }}</strong>
+                        </td>
+                        <td>{{ location.name }}</td>
+                        <td>
+                            {% if location.location_type == 'warehouse' %}
+                                <span class="badge bg-primary"><i class="fas fa-warehouse"></i> Warehouse</span>
+                            {% elif location.location_type == 'shipping' %}
+                                <span class="badge bg-info"><i class="fas fa-shipping-fast"></i> Shipping</span>
+                            {% elif location.location_type == 'production' %}
+                                <span class="badge bg-success"><i class="fas fa-industry"></i> Production</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ location.location_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if location.zone %}
+                                <span class="text-muted">{{ location.zone }}</span>
+                            {% else %}
+                                <span class="text-muted fst-italic">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ url_for('locations.bins', id=location.id) }}" class="badge bg-info text-decoration-none">
+                                <i class="fas fa-box"></i> {{ bin_count }}
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill">{{ inventory_count }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-success rounded-pill">{{ "%.2f"|format(total_qty) }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if location.active %}
+                                <span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-ban"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('locations.bins', id=location.id) }}"
+                                   class="btn btn-sm btn-info"
+                                   title="Manage Bins">
+                                    <i class="fas fa-box"></i>
+                                </a>
+                                <a href="{{ url_for('locations.edit', id=location.id) }}"
+                                   class="btn btn-sm btn-primary"
+                                   title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-sm btn-danger"
+                                        onclick="confirmDelete('{{ location.code }}', {{ location.id }})"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-warehouse fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No locations found. Create your first location to get started.</p>
+            <a href="{{ url_for('locations.new') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Location
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Location Statistics -->
+{% if locations %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Total Locations</h6>
+                        <h2 class="mb-0">{{ locations|length }}</h2>
+                    </div>
+                    <div class="opacity-50">
+                        <i class="fas fa-warehouse fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Total Bins</h6>
+                        <h2 class="mb-0">{{ locations|sum(attribute='2') }}</h2>
+                    </div>
+                    <div class="opacity-50">
+                        <i class="fas fa-box fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Items in Inventory</h6>
+                        <h2 class="mb-0">{{ locations|sum(attribute='1') }}</h2>
+                    </div>
+                    <div class="opacity-50">
+                        <i class="fas fa-cubes fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<form id="deleteForm" method="POST" style="display: none;">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(locationCode, locationId) {
+    if (confirm(`Are you sure you want to delete location "${locationCode}"?\n\nThis action cannot be undone. All associated bins will also be deleted.`)) {
+        const form = document.getElementById('deleteForm');
+        form.action = `/locations/${locationId}/delete`;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

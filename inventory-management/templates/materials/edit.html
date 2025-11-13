@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Material - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-edit"></i> Edit Material</h2>
+            <a href="{{ url_for('materials.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Materials
+            </a>
+        </div>
+
+        <div class="card shadow-blue">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-cube"></i> {{ material.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('materials.edit', id=material.id) }}" id="materialForm">
+                    <div class="row">
+                        <!-- Material Name -->
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-tag"></i> Material Name
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="name"
+                                   name="name"
+                                   placeholder="Enter material name"
+                                   value="{{ material.name }}"
+                                   required
+                                   maxlength="100"
+                                   autofocus>
+                            <div class="form-text">Unique name to identify the material</div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">
+                                <i class="fas fa-folder"></i> Category
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="category"
+                                   name="category"
+                                   list="categoryList"
+                                   placeholder="Enter or select category"
+                                   value="{{ material.category or '' }}"
+                                   maxlength="50">
+                            <datalist id="categoryList">
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">
+                                {% endfor %}
+                            </datalist>
+                            <div class="form-text">Group materials by category</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-align-left"></i> Description
+                        </label>
+                        <textarea class="form-control"
+                                  id="description"
+                                  name="description"
+                                  rows="3"
+                                  placeholder="Enter detailed description of the material"
+                                  maxlength="500">{{ material.description or '' }}</textarea>
+                        <div class="form-text">Detailed description (max 500 characters)</div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Unit of Measure -->
+                        <div class="col-md-4 mb-3">
+                            <label for="unit_of_measure" class="form-label">
+                                <i class="fas fa-ruler"></i> Unit of Measure
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="unit_of_measure" name="unit_of_measure" required>
+                                <option value="">Select UoM</option>
+                                <option value="PCS" {% if material.unit_of_measure == 'PCS' %}selected{% endif %}>PCS - Pieces</option>
+                                <option value="KG" {% if material.unit_of_measure == 'KG' %}selected{% endif %}>KG - Kilograms</option>
+                                <option value="LB" {% if material.unit_of_measure == 'LB' %}selected{% endif %}>LB - Pounds</option>
+                                <option value="LT" {% if material.unit_of_measure == 'LT' %}selected{% endif %}>LT - Liters</option>
+                                <option value="GAL" {% if material.unit_of_measure == 'GAL' %}selected{% endif %}>GAL - Gallons</option>
+                                <option value="M" {% if material.unit_of_measure == 'M' %}selected{% endif %}>M - Meters</option>
+                                <option value="FT" {% if material.unit_of_measure == 'FT' %}selected{% endif %}>FT - Feet</option>
+                                <option value="SQM" {% if material.unit_of_measure == 'SQM' %}selected{% endif %}>SQM - Square Meters</option>
+                                <option value="SQFT" {% if material.unit_of_measure == 'SQFT' %}selected{% endif %}>SQFT - Square Feet</option>
+                                <option value="BOX" {% if material.unit_of_measure == 'BOX' %}selected{% endif %}>BOX - Boxes</option>
+                                <option value="PACK" {% if material.unit_of_measure == 'PACK' %}selected{% endif %}>PACK - Packs</option>
+                                <option value="ROLL" {% if material.unit_of_measure == 'ROLL' %}selected{% endif %}>ROLL - Rolls</option>
+                                <option value="SET" {% if material.unit_of_measure == 'SET' %}selected{% endif %}>SET - Sets</option>
+                                {% if material.unit_of_measure not in ['PCS', 'KG', 'LB', 'LT', 'GAL', 'M', 'FT', 'SQM', 'SQFT', 'BOX', 'PACK', 'ROLL', 'SET'] %}
+                                <option value="{{ material.unit_of_measure }}" selected>{{ material.unit_of_measure }}</option>
+                                {% endif %}
+                            </select>
+                            <div class="form-text">How the material is measured</div>
+                        </div>
+
+                        <!-- Reorder Level -->
+                        <div class="col-md-4 mb-3">
+                            <label for="reorder_level" class="form-label">
+                                <i class="fas fa-exclamation-triangle"></i> Reorder Level
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="reorder_level"
+                                   name="reorder_level"
+                                   placeholder="0"
+                                   min="0"
+                                   step="0.01"
+                                   value="{{ material.reorder_level }}">
+                            <div class="form-text">Alert when stock falls below</div>
+                        </div>
+
+                        <!-- Reorder Quantity -->
+                        <div class="col-md-4 mb-3">
+                            <label for="reorder_quantity" class="form-label">
+                                <i class="fas fa-shopping-cart"></i> Reorder Quantity
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="reorder_quantity"
+                                   name="reorder_quantity"
+                                   placeholder="0"
+                                   min="0"
+                                   step="0.01"
+                                   value="{{ material.reorder_quantity }}">
+                            <div class="form-text">Suggested quantity to reorder</div>
+                        </div>
+                    </div>
+
+                    <!-- Active Status -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="active"
+                                   name="active"
+                                   {% if material.active %}checked{% endif %}>
+                            <label class="form-check-label" for="active" id="activeLabel">
+                                {% if material.active %}
+                                <i class="fas fa-toggle-on text-success"></i> Material is Active
+                                {% else %}
+                                <i class="fas fa-toggle-off text-danger"></i> Material is Inactive
+                                {% endif %}
+                            </label>
+                            <div class="form-text">Only active materials can be used in transactions</div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card bg-blue-light border-0 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Fields marked with <span class="text-danger">*</span> are required
+                            </small>
+                            <div>
+                                <a href="{{ url_for('materials.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Update Material
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Additional Information Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Material Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Material ID:</strong> {{ material.id }}</p>
+                        <p><strong>Created:</strong> {{ material.created_at.strftime('%Y-%m-%d %H:%M') if material.created_at else 'N/A' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Last Updated:</strong> {{ material.updated_at.strftime('%Y-%m-%d %H:%M') if material.updated_at else 'N/A' }}</p>
+                        <p>
+                            <strong>Status:</strong>
+                            {% if material.active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> Important Notes
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Name Changes:</strong> Changing the material name will affect all related records and reports</li>
+                    <li><strong>Unit of Measure:</strong> Be careful when changing UoM - it may affect inventory calculations</li>
+                    <li><strong>Inactive Materials:</strong> Setting a material as inactive will hide it from transaction forms but preserve historical data</li>
+                    <li><strong>Reorder Levels:</strong> Update reorder levels based on your actual consumption patterns</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation
+document.getElementById('materialForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const uom = document.getElementById('unit_of_measure').value;
+
+    if (!name) {
+        e.preventDefault();
+        alert('Please enter a material name.');
+        document.getElementById('name').focus();
+        return false;
+    }
+
+    if (!uom) {
+        e.preventDefault();
+        alert('Please select a unit of measure.');
+        document.getElementById('unit_of_measure').focus();
+        return false;
+    }
+
+    return true;
+});
+
+// Update toggle icon based on checkbox state
+document.getElementById('active').addEventListener('change', function() {
+    const label = document.getElementById('activeLabel');
+    if (this.checked) {
+        label.innerHTML = '<i class="fas fa-toggle-on text-success"></i> Material is Active';
+    } else {
+        label.innerHTML = '<i class="fas fa-toggle-off text-danger"></i> Material is Inactive';
+    }
+});
+</script>
+{% endblock %}

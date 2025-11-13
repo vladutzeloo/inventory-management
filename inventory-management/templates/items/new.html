@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}New Item - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus-circle"></i> Create New Item
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('items.new') }}" novalidate>
+                    <div class="row">
+                        <!-- Item Name -->
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-tag text-primary"></i> Item Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="name"
+                                   name="name"
+                                   required
+                                   maxlength="200"
+                                   placeholder="Enter item name">
+                            <div class="invalid-feedback">
+                                Please provide an item name.
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">
+                                <i class="fas fa-folder text-primary"></i> Category
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="category"
+                                   name="category"
+                                   list="categoryList"
+                                   maxlength="100"
+                                   placeholder="Enter or select category">
+                            <datalist id="categoryList">
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">
+                                {% endfor %}
+                            </datalist>
+                            <small class="form-text text-muted">
+                                E.g., Finished Goods, Assemblies, Sub-assemblies
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-align-left text-primary"></i> Description
+                        </label>
+                        <textarea class="form-control"
+                                  id="description"
+                                  name="description"
+                                  rows="3"
+                                  placeholder="Enter item description"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <!-- Unit of Measure -->
+                        <div class="col-md-4 mb-3">
+                            <label for="unit_of_measure" class="form-label">
+                                <i class="fas fa-ruler text-primary"></i> Unit of Measure <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="unit_of_measure" name="unit_of_measure" required>
+                                <option value="">Select unit...</option>
+                                <option value="PCS">PCS - Pieces</option>
+                                <option value="EA">EA - Each</option>
+                                <option value="SET">SET - Set</option>
+                                <option value="KIT">KIT - Kit</option>
+                                <option value="BOX">BOX - Box</option>
+                                <option value="PACK">PACK - Pack</option>
+                                <option value="KG">KG - Kilogram</option>
+                                <option value="G">G - Gram</option>
+                                <option value="L">L - Liter</option>
+                                <option value="M">M - Meter</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a unit of measure.
+                            </div>
+                        </div>
+
+                        <!-- Reorder Level -->
+                        <div class="col-md-4 mb-3">
+                            <label for="reorder_level" class="form-label">
+                                <i class="fas fa-level-down-alt text-primary"></i> Reorder Level
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="reorder_level"
+                                   name="reorder_level"
+                                   step="0.01"
+                                   min="0"
+                                   value="0"
+                                   placeholder="0.00">
+                            <small class="form-text text-muted">
+                                Minimum stock level before reorder
+                            </small>
+                        </div>
+
+                        <!-- Reorder Quantity -->
+                        <div class="col-md-4 mb-3">
+                            <label for="reorder_quantity" class="form-label">
+                                <i class="fas fa-cart-plus text-primary"></i> Reorder Quantity
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="reorder_quantity"
+                                   name="reorder_quantity"
+                                   step="0.01"
+                                   min="0"
+                                   value="0"
+                                   placeholder="0.00">
+                            <small class="form-text text-muted">
+                                Standard reorder quantity
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Active Status -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="active"
+                                   name="active"
+                                   checked>
+                            <label class="form-check-label" for="active">
+                                <i class="fas fa-toggle-on text-success"></i> Active
+                            </label>
+                            <small class="form-text text-muted d-block">
+                                Inactive items will not be available for transactions
+                            </small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-body bg-light">
+                <h6 class="text-primary">
+                    <i class="fas fa-info-circle"></i> Help
+                </h6>
+                <ul class="mb-0 small">
+                    <li><strong>Item Name:</strong> Unique identifier for the finished good or product</li>
+                    <li><strong>Category:</strong> Groups items for reporting and filtering</li>
+                    <li><strong>Unit of Measure:</strong> How the item is counted (pieces, sets, etc.)</li>
+                    <li><strong>Reorder Levels:</strong> Set thresholds for automatic reorder alerts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Bootstrap form validation
+(function() {
+    'use strict';
+    var forms = document.querySelectorAll('form[novalidate]');
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+
+// Auto-capitalize item name
+document.getElementById('name').addEventListener('blur', function() {
+    this.value = this.value.trim();
+});
+</script>
+{% endblock %}

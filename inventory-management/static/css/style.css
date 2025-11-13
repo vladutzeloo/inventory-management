@@ -1,23 +1,120 @@
-/* Custom styles for Inventory Management System */
+/* ============================================
+   Professional Blue Theme for Inventory Management System
+   ============================================ */
+
+:root {
+    --primary-blue: #1e3a8a;
+    --secondary-blue: #2563eb;
+    --light-blue: #3b82f6;
+    --dark-blue: #1e40af;
+    --accent-blue: #60a5fa;
+    --bg-blue: #eff6ff;
+    --hover-blue: #dbeafe;
+}
 
 body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: #f8fafc;
 }
 
 .container-fluid {
     flex: 1;
 }
 
-/* Dashboard cards */
+/* ============================================
+   Navbar - Professional Blue
+   ============================================ */
+.navbar-dark.bg-primary {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+}
+
+/* ============================================
+   Cards - Blue Themed
+   ============================================ */
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--light-blue) 100%);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    border: none;
+}
+
+.card-header.bg-primary {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%) !important;
+}
+
+.card-header.bg-info {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%) !important;
+}
+
+.card-header.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
+}
+
+.card-header.bg-success {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+}
+
+.card-header.bg-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+}
+
+/* ============================================
+   Dashboard Metric Cards
+   ============================================ */
 .metric-card {
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 0.75rem;
+    border: none;
 }
 
 .metric-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card.bg-primary {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%) !important;
+}
+
+.metric-card.bg-success {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+}
+
+.metric-card.bg-info {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%) !important;
+}
+
+.metric-card.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
 }
 
 .metric-icon {
@@ -25,73 +122,225 @@ body {
     opacity: 0.7;
 }
 
-/* Tables */
-.table-hover tbody tr:hover {
-    background-color: #f8f9fa;
-    cursor: pointer;
+/* ============================================
+   Buttons - Blue Professional
+   ============================================ */
+.btn-primary {
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--light-blue) 100%);
+    border: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
-/* Buttons */
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.btn-outline-primary {
+    border-color: var(--secondary-blue);
+    color: var(--secondary-blue);
+    font-weight: 500;
+}
+
+.btn-outline-primary:hover {
+    background: var(--secondary-blue);
+    border-color: var(--secondary-blue);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    border: none;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    transform: translateY(-2px);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    border: none;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+    transform: translateY(-2px);
+}
+
 .btn-group-sm .btn {
     padding: 0.25rem 0.5rem;
     font-size: 0.875rem;
 }
 
-/* Badges */
+/* ============================================
+   Tables - Professional Style
+   ============================================ */
+.table {
+    background-color: white;
+}
+
+.table thead th {
+    background-color: var(--bg-blue);
+    color: var(--primary-blue);
+    font-weight: 600;
+    border-bottom: 2px solid var(--secondary-blue);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.table-hover tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--hover-blue);
+    cursor: pointer;
+    transform: scale(1.01);
+}
+
+/* ============================================
+   Forms - Blue Theme
+   ============================================ */
+.form-label {
+    font-weight: 600;
+    color: var(--primary-blue);
+    margin-bottom: 0.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+}
+
+.form-control,
+.form-select {
+    border: 1px solid #cbd5e1;
+    transition: all 0.2s ease;
+}
+
+/* ============================================
+   Badges - Blue Theme
+   ============================================ */
 .badge {
     font-weight: 500;
+    padding: 0.35em 0.65em;
 }
 
-/* Forms */
-.form-label {
-    font-weight: 500;
+.badge-primary {
+    background-color: var(--secondary-blue);
 }
 
-/* Search bars */
+/* ============================================
+   Alerts - Professional
+   ============================================ */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.alert-low-stock {
+    background-color: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    color: #92400e;
+}
+
+.alert-primary {
+    background-color: var(--bg-blue);
+    color: var(--primary-blue);
+    border-left: 4px solid var(--secondary-blue);
+}
+
+.alert-info {
+    background-color: #cffafe;
+    color: #155e75;
+    border-left: 4px solid #06b6d4;
+}
+
+/* ============================================
+   Search Bars
+   ============================================ */
 .search-bar {
     max-width: 400px;
 }
 
-/* Status indicators */
+.search-bar .form-control {
+    border-radius: 2rem;
+    padding-left: 2.5rem;
+}
+
+.search-bar .input-group-text {
+    background-color: transparent;
+    border: none;
+}
+
+/* ============================================
+   Status Indicators
+   ============================================ */
 .status-active {
-    color: #28a745;
+    color: #10b981;
+    font-weight: 600;
 }
 
 .status-inactive {
-    color: #dc3545;
+    color: #dc2626;
+    font-weight: 600;
 }
 
-/* Low stock alerts */
-.alert-low-stock {
-    background-color: #fff3cd;
-    border-left: 4px solid #ffc107;
-}
-
-/* Pagination */
+/* ============================================
+   Pagination
+   ============================================ */
 .pagination {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
 }
 
-/* Footer */
+.pagination .page-link {
+    color: var(--secondary-blue);
+    border-color: #e2e8f0;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--light-blue) 100%);
+    border-color: var(--secondary-blue);
+}
+
+.pagination .page-link:hover {
+    background-color: var(--hover-blue);
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
 footer {
     margin-top: auto;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, var(--bg-blue) 100%);
 }
 
-/* Responsive navbar */
-@media (max-width: 768px) {
-    .navbar-nav {
-        margin-top: 1rem;
-    }
-}
-
-/* Dynamic row styling */
+/* ============================================
+   Dynamic Rows (for forms)
+   ============================================ */
 .dynamic-row {
-    background-color: #f8f9fa;
+    background-color: var(--bg-blue);
     padding: 1rem;
     margin-bottom: 1rem;
-    border-radius: 0.25rem;
-    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    border: 1px solid #bfdbfe;
+    position: relative;
 }
 
 .remove-row-btn {
@@ -100,18 +349,105 @@ footer {
     top: 10px;
 }
 
-/* Loading spinner */
+/* ============================================
+   Loading Spinner
+   ============================================ */
 .spinner-border-sm {
     width: 1rem;
     height: 1rem;
 }
 
-/* Number inputs */
+.spinner-border {
+    color: var(--secondary-blue);
+}
+
+/* ============================================
+   Number Inputs
+   ============================================ */
 input[type="number"] {
     text-align: right;
 }
 
-/* Card header actions */
+/* ============================================
+   Card Header Actions
+   ============================================ */
 .card-header .btn {
     margin-left: 0.5rem;
+}
+
+/* ============================================
+   Dropdown Menus
+   ============================================ */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: var(--hover-blue);
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   Page Headers
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-blue);
+}
+
+.page-header {
+    border-bottom: 2px solid var(--secondary-blue);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   Charts Container
+   ============================================ */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 1rem 0;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+    .navbar-nav {
+        margin-top: 1rem;
+    }
+
+    .metric-card {
+        margin-bottom: 1rem;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.text-blue {
+    color: var(--secondary-blue);
+}
+
+.bg-blue-light {
+    background-color: var(--bg-blue);
+}
+
+.border-blue {
+    border-color: var(--secondary-blue) !important;
+}
+
+.shadow-blue {
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
 }

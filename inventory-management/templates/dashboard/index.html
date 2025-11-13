@@ -105,6 +105,34 @@
 </div>
 {% endif %}
 
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Inventory Distribution by Location</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="locationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Materials vs Items Inventory</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="inventoryTypeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Inventory by Location -->
 <div class="row mb-4">
     <div class="col-md-6">
@@ -113,7 +141,7 @@
                 <h5 class="mb-0"><i class="fas fa-warehouse"></i> Inventory by Location</h5>
             </div>
             <div class="card-body">
-                <table class="table table-sm">
+                <table class="table table-sm table-hover">
                     <thead>
                         <tr>
                             <th>Location</th>
@@ -125,8 +153,8 @@
                     <tbody>
                         {% for location in inventory_by_location %}
                         <tr>
-                            <td>{{ location[0] }}</td>
-                            <td>{{ location[1] }}</td>
+                            <td><strong>{{ location[0] }}</strong></td>
+                            <td><span class="badge bg-primary">{{ location[1] }}</span></td>
                             <td>{{ location[2] }}</td>
                             <td>{{ location[3] }}</td>
                         </tr>
@@ -144,7 +172,7 @@
                 <h5 class="mb-0"><i class="fas fa-cubes"></i> Recent Batches</h5>
             </div>
             <div class="card-body">
-                <table class="table table-sm">
+                <table class="table table-sm table-hover">
                     <thead>
                         <tr>
                             <th>Batch Number</th>
@@ -156,9 +184,9 @@
                     <tbody>
                         {% for batch in recent_batches %}
                         <tr>
-                            <td><small>{{ batch.batch_number }}</small></td>
+                            <td><small><code>{{ batch.batch_number }}</code></small></td>
                             <td><small>{{ batch.material.name if batch.material else batch.item.name }}</small></td>
-                            <td>{{ batch.quantity_available }}</td>
+                            <td><span class="badge bg-info">{{ batch.quantity_available }}</span></td>
                             <td><small>{{ batch.received_date.strftime('%Y-%m-%d') }}</small></td>
                         </tr>
                         {% endfor %}
@@ -203,4 +231,124 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Professional blue color scheme
+const blueColors = [
+    'rgba(30, 58, 138, 0.8)',    // primary-blue
+    'rgba(37, 99, 235, 0.8)',    // secondary-blue
+    'rgba(59, 130, 246, 0.8)',   // light-blue
+    'rgba(96, 165, 250, 0.8)',   // accent-blue
+    'rgba(147, 197, 253, 0.8)',  // lighter-blue
+    'rgba(191, 219, 254, 0.8)',  // very-light-blue
+];
+
+const borderColors = [
+    'rgba(30, 58, 138, 1)',
+    'rgba(37, 99, 235, 1)',
+    'rgba(59, 130, 246, 1)',
+    'rgba(96, 165, 250, 1)',
+    'rgba(147, 197, 253, 1)',
+    'rgba(191, 219, 254, 1)',
+];
+
+// Location Distribution Chart (Pie)
+const locationData = {
+    labels: [{% for location in inventory_by_location %}'{{ location[0] }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Quantity by Location',
+        data: [{% for location in inventory_by_location %}{{ location[1] }}{% if not loop.last %}, {% endif %}{% endfor %}],
+        backgroundColor: blueColors,
+        borderColor: borderColors,
+        borderWidth: 2
+    }]
+};
+
+const locationChart = new Chart(document.getElementById('locationChart'), {
+    type: 'doughnut',
+    data: locationData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    font: {
+                        size: 12,
+                        family: "'Segoe UI', Arial, sans-serif"
+                    }
+                }
+            },
+            title: {
+                display: false
+            }
+        }
+    }
+});
+
+// Calculate total materials and items quantities
+const totalMaterialsQty = {% for location in inventory_by_location %}{{ location[2] }}{% if not loop.last %} + {% endif %}{% endfor %} || 0;
+const totalItemsQty = {% for location in inventory_by_location %}{{ location[3] }}{% if not loop.last %} + {% endif %}{% endfor %} || 0;
+
+// Materials vs Items Chart (Bar)
+const inventoryTypeData = {
+    labels: ['Materials', 'Items'],
+    datasets: [{
+        label: 'Count',
+        data: [totalMaterialsQty, totalItemsQty],
+        backgroundColor: [
+            'rgba(37, 99, 235, 0.8)',
+            'rgba(8, 145, 178, 0.8)'
+        ],
+        borderColor: [
+            'rgba(37, 99, 235, 1)',
+            'rgba(8, 145, 178, 1)'
+        ],
+        borderWidth: 2
+    }]
+};
+
+const inventoryTypeChart = new Chart(document.getElementById('inventoryTypeChart'), {
+    type: 'bar',
+    data: inventoryTypeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    font: {
+                        size: 11
+                    }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                ticks: {
+                    font: {
+                        size: 12,
+                        weight: '600'
+                    }
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
 {% endblock %}
