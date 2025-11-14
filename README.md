@@ -58,7 +58,14 @@ setup.bat
 launch_server.bat
 ```
 
-Access at: http://localhost:5001
+**Access:**
+- **From your computer:** http://localhost:5001 or http://127.0.0.1:5001
+- **From colleague's computers:** The launch script will display your network IP (e.g., http://192.168.1.100:5001)
+
+**Note:** The `launch_server.bat` script will:
+- Show your network IP address for colleagues
+- Automatically configure Windows Firewall to allow port 5001
+- Start the server on all network interfaces
 
 The `setup.bat` script automatically:
 - Creates `.env` file with a secure random SECRET_KEY
