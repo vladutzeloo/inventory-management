@@ -87,7 +87,7 @@
                             <td class="text-end">
                                 {% set total = namespace(value=0) %}
                                 {% for item in receipt.items %}
-                                    {% set total.value = total.value + (item.quantity * item.cost_per_unit) %}
+                                    {% set total.value = total.value + (item.quantity * float(item.cost_per_unit)) %}
                                 {% endfor %}
                                 <strong class="text-success">
                                     ${{ "%.2f"|format(total.value) }}

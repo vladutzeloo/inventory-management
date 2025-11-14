@@ -259,7 +259,7 @@
                         <tbody>
                             {% set total_cost = 0 %}
                             {% for tb in transfer_batches %}
-                            {% set batch_total = tb.quantity_transferred * tb.cost_per_unit %}
+                            {% set batch_total = tb.quantity_transferred * float(tb.cost_per_unit) %}
                             {% set total_cost = total_cost + batch_total %}
                             <tr>
                                 <td>
