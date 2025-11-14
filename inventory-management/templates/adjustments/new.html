@@ -20,6 +20,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('adjustments.new') }}" id="adjustmentForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <!-- Adjustment Date -->
                     <div class="mb-3">
                         <label for="adjustment_date" class="form-label">

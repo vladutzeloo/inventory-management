@@ -20,6 +20,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('materials.new') }}" id="materialForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="row">
                         <!-- Material Name -->
                         <div class="col-md-6 mb-3">

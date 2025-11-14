@@ -16,6 +16,7 @@
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('receipts.index') }}" class="row g-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="col-md-10">
                 <div class="input-group">
                     <span class="input-group-text bg-primary text-white">
@@ -194,6 +195,7 @@
                     <i class="fas fa-times"></i> Cancel
                 </button>
                 <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Delete
                     </button>

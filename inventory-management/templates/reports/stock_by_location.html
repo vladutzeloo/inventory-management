@@ -19,6 +19,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('reports.stock_by_location') }}" class="row g-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="col-md-6">
                 <label for="location" class="form-label">
                     <i class="fas fa-filter text-blue"></i> Filter by Location

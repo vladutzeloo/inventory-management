@@ -21,6 +21,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('materials.import_data') }}" enctype="multipart/form-data" id="importForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-4">
                         <label for="file" class="form-label">
                             <i class="fas fa-file-excel"></i> Select Excel File

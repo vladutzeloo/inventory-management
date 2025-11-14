@@ -20,6 +20,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('scraps.new') }}" id="scrapForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <!-- Scrap Date -->
                     <div class="mb-3">
                         <label for="scrap_date" class="form-label">

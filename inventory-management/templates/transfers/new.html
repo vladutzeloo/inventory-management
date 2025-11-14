@@ -20,6 +20,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('transfers.new') }}" id="transferForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <!-- Transfer Date -->
                     <div class="row mb-4">
                         <div class="col-md-12">
