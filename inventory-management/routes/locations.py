@@ -224,3 +224,52 @@ def api_bins(location_id):
     """API endpoint to get bins for a location"""
     bins = Bin.query.filter_by(location_id=location_id, active=True).order_by(Bin.bin_code).all()
     return jsonify([{'id': b.id, 'bin_code': b.bin_code, 'description': b.description} for b in bins])
+
+
+@bp.route('/api/available-quantity')
+@login_required
+def api_available_quantity():
+    """API endpoint to get available quantity for item/material at location/bin"""
+    item_type = request.args.get('item_type')  # 'material' or 'item'
+    item_id = request.args.get('item_id', type=int)
+    location_id = request.args.get('location_id', type=int)
+    bin_id = request.args.get('bin_id', type=int) if request.args.get('bin_id') else None
+
+    if not item_type or not item_id or not location_id:
+        return jsonify({'error': 'Missing required parameters'}), 400
+
+    # Query inventory level
+    query = InventoryLevel.query.filter_by(
+        location_id=location_id,
+        bin_id=bin_id
+    )
+
+    if item_type == 'material':
+        query = query.filter_by(material_id=item_id)
+    elif item_type == 'item':
+        query = query.filter_by(item_id=item_id)
+    else:
+        return jsonify({'error': 'Invalid item type'}), 400
+
+    inventory = query.first()
+
+    if inventory and inventory.quantity > 0:
+        # Get the item/material name and UOM
+        if item_type == 'material':
+            name = inventory.material.name
+            uom = inventory.material.unit_of_measure
+        else:
+            name = inventory.item.name
+            uom = inventory.item.unit_of_measure
+
+        return jsonify({
+            'available': True,
+            'quantity': inventory.quantity,
+            'name': name,
+            'uom': uom
+        })
+    else:
+        return jsonify({
+            'available': False,
+            'quantity': 0
+        })
