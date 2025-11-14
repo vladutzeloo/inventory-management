@@ -53,9 +53,12 @@ A professional, production-ready inventory management system with FIFO batch tra
 # Clone and navigate
 cd inventory-management
 
-# Configure environment
-cp .env.example .env
-# Edit .env and set SECRET_KEY
+# Configure environment (automated setup with secure SECRET_KEY)
+python3 setup_env.py
+
+# Or manually:
+# cp .env.example .env
+# Edit .env and set a secure SECRET_KEY
 
 # Deploy
 ./deploy.sh
@@ -67,7 +70,16 @@ Access at: http://localhost:5001
 ### Option 2: Manual Installation
 
 ```bash
-cd inventory-management/inventory-management
+cd inventory-management
+
+# Configure environment (automated setup with secure SECRET_KEY)
+python3 setup_env.py
+
+# Or manually:
+# cp .env.example .env
+# Edit .env and set a secure SECRET_KEY
+
+cd inventory-management
 
 # Create virtual environment
 python3 -m venv venv
@@ -75,10 +87,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Copy environment file
-cp ../.env.example ../.env
-# Edit ../.env and set SECRET_KEY
 
 # Run
 python app.py
