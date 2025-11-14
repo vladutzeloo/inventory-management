@@ -131,7 +131,7 @@
                             {% if receipt_items %}
                                 {% set grand_total = namespace(value=0) %}
                                 {% for item in receipt_items %}
-                                {% set line_total = item.quantity * item.cost_per_unit %}
+                                {% set line_total = item.quantity * float(item.cost_per_unit) %}
                                 {% set grand_total.value = grand_total.value + line_total %}
                                 <tr>
                                     <td>
