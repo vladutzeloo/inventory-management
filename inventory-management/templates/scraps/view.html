@@ -208,10 +208,10 @@
                                     ${{ "%.2f"|format(scrap_batch.cost_per_unit) }}
                                 </td>
                                 <td class="text-end">
-                                    <strong>${{ "%.2f"|format(scrap_batch.quantity_scrapped * float(scrap_batch.cost_per_unit)) }}</strong>
+                                    <strong>${{ "%.2f"|format(scrap_batch.quantity_scrapped * (scrap_batch.cost_per_unit|float)) }}</strong>
                                 </td>
                             </tr>
-                            {% set total_cost = total_cost + (scrap_batch.quantity_scrapped * float(scrap_batch.cost_per_unit)) %}
+                            {% set total_cost = total_cost + (scrap_batch.quantity_scrapped * (scrap_batch.cost_per_unit|float)) %}
                             {% endfor %}
                         </tbody>
                         <tfoot class="table-light">
