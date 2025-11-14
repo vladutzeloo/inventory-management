@@ -133,11 +133,13 @@
                 </h6>
                 <ul class="mb-0 small">
                     <li><strong>Receipt Date:</strong> The date when goods were received</li>
-                    <li><strong>PO Number:</strong> External purchase order reference (optional)</li>
-                    <li><strong>Item Type:</strong> Select whether you're receiving a Material or Item</li>
+                    <li><strong>PO Number:</strong> External purchase order reference (optional) - Can be used for partial receipts</li>
+                    <li><strong>Item Type:</strong> Select whether you're receiving a Material or Item (searchable dropdown)</li>
                     <li><strong>Supplier Batch:</strong> Batch number from supplier for traceability</li>
-                    <li><strong>Location/Bin:</strong> Where the received goods will be stored</li>
+                    <li><strong>Location:</strong> Required - Where the goods will be stored (searchable dropdown)</li>
+                    <li><strong>Bin:</strong> <span class="text-primary">Optional but recommended</span> - Specific bin within the location for precise tracking. First select a location, then bins will appear. Leave empty if storing at location level.</li>
                     <li><strong>Cost per Unit:</strong> Unit cost for FIFO batch costing</li>
+                    <li><strong>Partial Receipts:</strong> You can receive items in multiple receipts using the same PO Number to track against the order</li>
                 </ul>
             </div>
         </div>
@@ -217,9 +219,10 @@ $(document).ready(function() {
                         <label class="form-label">
                             <i class="fas fa-box text-primary"></i> Item/Material <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select"
+                        <select class="form-select select2"
                                 name="item_id_${rowIndex}"
                                 id="item_id_${rowIndex}"
+                                data-placeholder="Search for item or material..."
                                 required
                                 disabled>
                             <option value="">Select type first...</option>
@@ -231,9 +234,10 @@ $(document).ready(function() {
                         <label class="form-label">
                             <i class="fas fa-warehouse text-primary"></i> Location <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select location-select"
+                        <select class="form-select select2 location-select"
                                 name="location_id_${rowIndex}"
                                 id="location_id_${rowIndex}"
+                                data-placeholder="Search location..."
                                 required
                                 onchange="updateBinSelector(${rowIndex})">
                             <option value="">Select...</option>
@@ -247,13 +251,16 @@ $(document).ready(function() {
                     <div class="col-md-2 mb-3">
                         <label class="form-label">
                             <i class="fas fa-box-open text-primary"></i> Bin
+                            <i class="fas fa-info-circle text-muted" title="Optional: Choose a specific bin within the location"></i>
                         </label>
-                        <select class="form-select bin-select"
+                        <select class="form-select select2 bin-select"
                                 name="bin_id_${rowIndex}"
                                 id="bin_id_${rowIndex}"
+                                data-placeholder="Optional: Select bin..."
                                 disabled>
-                            <option value="">Select location...</option>
+                            <option value="">Select location first...</option>
                         </select>
+                        <small class="form-text text-muted">Optional</small>
                     </div>
 
                     <!-- Quantity -->
@@ -314,6 +321,27 @@ $(document).ready(function() {
         `;
 
         $('#itemsContainer').append(rowHtml);
+
+        // Initialize Select2 on newly added selects
+        $(`#item_id_${rowIndex}`).select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Search for item or material...',
+            allowClear: true
+        });
+        $(`#location_id_${rowIndex}`).select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Search location...',
+            allowClear: true
+        });
+        $(`#bin_id_${rowIndex}`).select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Optional: Select bin...',
+            allowClear: true
+        });
+
         updateItemCount();
     }
 
@@ -333,6 +361,11 @@ $(document).ready(function() {
         const itemType = $(`#item_type_${rowIndex}`).val();
         const itemSelector = $(`#item_id_${rowIndex}`);
 
+        // Destroy Select2 first
+        if (itemSelector.hasClass('select2-hidden-accessible')) {
+            itemSelector.select2('destroy');
+        }
+
         itemSelector.empty();
 
         if (itemType === 'material') {
@@ -351,6 +384,14 @@ $(document).ready(function() {
             itemSelector.prop('disabled', true);
             itemSelector.append('<option value="">Select type first...</option>');
         }
+
+        // Reinitialize Select2
+        itemSelector.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Search for item or material...',
+            allowClear: true
+        });
     };
 
     // Update bin selector based on location
@@ -358,18 +399,31 @@ $(document).ready(function() {
         const locationId = $(`#location_id_${rowIndex}`).val();
         const binSelector = $(`#bin_id_${rowIndex}`);
 
+        // Destroy Select2 first
+        if (binSelector.hasClass('select2-hidden-accessible')) {
+            binSelector.select2('destroy');
+        }
+
         binSelector.empty();
 
         if (locationId && binsByLocation[locationId]) {
             binSelector.prop('disabled', false);
-            binSelector.append('<option value="">No Bin</option>');
+            binSelector.append('<option value="">No Bin (Location Level)</option>');
             binsByLocation[locationId].forEach(bin => {
                 binSelector.append(`<option value="${bin.id}">${bin.bin_code}</option>`);
             });
         } else {
             binSelector.prop('disabled', true);
-            binSelector.append('<option value="">Select location...</option>');
+            binSelector.append('<option value="">Select location first...</option>');
         }
+
+        // Reinitialize Select2
+        binSelector.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Optional: Select bin...',
+            allowClear: true
+        });
     };
 
     // Calculate total
