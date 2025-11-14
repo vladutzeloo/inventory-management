@@ -55,6 +55,7 @@ def new():
                 receipt_number=generate_receipt_number(),
                 receipt_date=datetime.strptime(request.form['receipt_date'], '%Y-%m-%d'),
                 po_number=request.form.get('po_number', '').strip(),
+                internal_order_number=request.form.get('internal_order_number', '').strip(),
                 supplier_name=request.form.get('supplier_name', '').strip(),
                 notes=request.form.get('notes', '').strip(),
                 created_by=current_user.username

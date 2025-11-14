@@ -243,6 +243,7 @@ class Receipt(db.Model):
     receipt_number = db.Column(db.String(50), unique=True, nullable=False, index=True)
     receipt_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     po_number = db.Column(db.String(100))  # External ERP reference
+    internal_order_number = db.Column(db.String(100))  # Internal production order reference
     supplier_name = db.Column(db.String(200))
     notes = db.Column(db.Text)
     created_by = db.Column(db.String(100))
@@ -260,6 +261,7 @@ class Receipt(db.Model):
             'receipt_number': self.receipt_number,
             'receipt_date': self.receipt_date.isoformat() if self.receipt_date else None,
             'po_number': self.po_number,
+            'internal_order_number': self.internal_order_number,
             'supplier_name': self.supplier_name,
             'notes': self.notes,
             'created_by': self.created_by,
@@ -319,6 +321,7 @@ class Transfer(db.Model):
 
     quantity = db.Column(db.Float, nullable=False)
     reason = db.Column(db.String(200))
+    internal_order_number = db.Column(db.String(100))  # Internal production order reference
     notes = db.Column(db.Text)
     status = db.Column(db.String(20), default='completed')  # pending, completed
 
@@ -357,6 +360,7 @@ class Transfer(db.Model):
             'to_bin_id': self.to_bin_id,
             'quantity': self.quantity,
             'reason': self.reason,
+            'internal_order_number': self.internal_order_number,
             'status': self.status,
             'created_by': self.created_by
         }

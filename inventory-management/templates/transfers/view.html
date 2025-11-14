@@ -96,6 +96,15 @@
                                 {% endif %}
                             </dd>
 
+                            <dt class="col-sm-5">Internal Order #:</dt>
+                            <dd class="col-sm-7">
+                                {% if transfer.internal_order_number %}
+                                    <span class="badge bg-success">{{ transfer.internal_order_number }}</span>
+                                {% else %}
+                                    <span class="text-muted fst-italic">-</span>
+                                {% endif %}
+                            </dd>
+
                             <dt class="col-sm-5">Created By:</dt>
                             <dd class="col-sm-7">
                                 <i class="fas fa-user"></i> {{ transfer.created_by }}

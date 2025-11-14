@@ -86,6 +86,7 @@ def new():
                 to_bin_id=to_bin_id,
                 quantity=quantity,
                 reason=request.form.get('reason', '').strip(),
+                internal_order_number=request.form.get('internal_order_number', '').strip(),
                 notes=request.form.get('notes', '').strip(),
                 status='completed',
                 created_by=current_user.username

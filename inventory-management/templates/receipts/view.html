@@ -55,6 +55,18 @@
                             </tr>
                             <tr>
                                 <th class="text-primary">
+                                    <i class="fas fa-hashtag"></i> Internal Order #:
+                                </th>
+                                <td>
+                                    {% if receipt.internal_order_number %}
+                                    <span class="badge bg-success">{{ receipt.internal_order_number }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-primary">
                                     <i class="fas fa-truck"></i> Supplier:
                                 </th>
                                 <td>
