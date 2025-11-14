@@ -289,8 +289,8 @@
                                     <strong>${{ "%.2f"|format(batch_total) }}</strong>
                                 </td>
                                 <td class="text-end">
-                                    {% if tb.batch.current_quantity > 0 %}
-                                        <span class="badge bg-success">{{ "%.2f"|format(tb.batch.current_quantity) }}</span>
+                                    {% if tb.batch and tb.batch.quantity_available > 0 %}
+                                        <span class="badge bg-success">{{ "%.2f"|format(tb.batch.quantity_available) }}</span>
                                     {% else %}
                                         <span class="badge bg-secondary">0.00</span>
                                     {% endif %}
