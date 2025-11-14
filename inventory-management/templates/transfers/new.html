@@ -326,12 +326,10 @@ function populateBins(selectElement, bins) {
 
     if (bins && bins.length > 0) {
         bins.forEach(bin => {
-            if (bin.active) {
-                const option = document.createElement('option');
-                option.value = bin.id;
-                option.textContent = bin.bin_code;
-                selectElement.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = bin.id;
+            option.textContent = bin.bin_code;
+            selectElement.appendChild(option);
         });
     }
 
