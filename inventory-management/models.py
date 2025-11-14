@@ -126,6 +126,9 @@ class Bin(db.Model):
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relationships
+    inventory_levels = db.relationship('InventoryLevel', backref='bin', lazy='dynamic')
+
     # Unique constraint: bin_code per location
     __table_args__ = (db.UniqueConstraint('location_id', 'bin_code', name='uq_location_bin'),)
 
