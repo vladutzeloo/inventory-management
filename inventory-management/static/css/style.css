@@ -95,6 +95,15 @@ body {
     color: white !important;
 }
 
+/* Metric cards should not have white card-body background */
+.metric-card .card-body {
+    background-color: transparent;
+}
+
+.metric-card .card-body * {
+    color: white !important;
+}
+
 /* ============================================
    Dashboard Metric Cards
    ============================================ */
