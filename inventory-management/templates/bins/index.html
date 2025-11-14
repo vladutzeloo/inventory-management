@@ -74,29 +74,35 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% if inventory_data %}
-                        {% for inv, mat_name, item_name, loc_code, loc_name, bin_code in inventory_data %}
+                    {% if inventory_items %}
+                        {% for inv in inventory_items %}
                         <tr>
                             <td>
-                                <strong class="text-primary">{{ mat_name or item_name }}</strong>
-                                <br>
-                                <small class="text-muted">
-                                    {% if mat_name %}
-                                    <i class="fas fa-cube"></i> Material
-                                    {% else %}
-                                    <i class="fas fa-box"></i> Item
-                                    {% endif %}
-                                </small>
+                                {% if inv.material %}
+                                    <strong class="text-primary">{{ inv.material.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-cube"></i> Material
+                                    </small>
+                                {% elif inv.item %}
+                                    <strong class="text-primary">{{ inv.item.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-box"></i> Item
+                                    </small>
+                                {% endif %}
                             </td>
                             <td>
-                                <strong>{{ loc_code }}</strong>
-                                <br>
-                                <small class="text-muted">{{ loc_name }}</small>
+                                {% if inv.location %}
+                                    <strong>{{ inv.location.code }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ inv.location.name }}</small>
+                                {% endif %}
                             </td>
                             <td class="text-center">
-                                {% if bin_code %}
+                                {% if inv.bin %}
                                 <span class="badge bg-primary">
-                                    <i class="fas fa-box-open"></i> {{ bin_code }}
+                                    <i class="fas fa-box-open"></i> {{ inv.bin.bin_code }}
                                 </span>
                                 {% else %}
                                 <span class="badge bg-secondary">
@@ -106,9 +112,11 @@
                             </td>
                             <td class="text-end">
                                 <strong>{{ "%.2f"|format(inv.quantity) }}</strong>
-                                <small class="text-muted">
-                                    {{ inv.material.unit_of_measure if inv.material else inv.item.unit_of_measure }}
-                                </small>
+                                {% if inv.material %}
+                                    <small class="text-muted">{{ inv.material.unit_of_measure }}</small>
+                                {% elif inv.item %}
+                                    <small class="text-muted">{{ inv.item.unit_of_measure }}</small>
+                                {% endif %}
                             </td>
                             <td>
                                 <form method="POST" action="{{ url_for('bins.assign') }}" class="d-flex gap-2">
@@ -118,17 +126,18 @@
 
                                     <select class="form-select form-select-sm select2-bin"
                                             name="new_bin_id"
-                                            data-location-id="{{ inv.location_id }}"
                                             style="flex: 1;">
                                         <option value="">Location Level (No Bin)</option>
-                                        {% for bin in inv.location.bins %}
-                                            {% if bin.active %}
-                                            <option value="{{ bin.id }}"
-                                                    {% if inv.bin_id == bin.id %}selected{% endif %}>
-                                                {{ bin.bin_code }}
-                                            </option>
-                                            {% endif %}
-                                        {% endfor %}
+                                        {% if inv.location %}
+                                            {% for bin in inv.location.bins %}
+                                                {% if bin.active %}
+                                                <option value="{{ bin.id }}"
+                                                        {% if inv.bin_id == bin.id %}selected{% endif %}>
+                                                    {{ bin.bin_code }}
+                                                </option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
                                     </select>
 
                                     <button type="submit"
@@ -156,7 +165,7 @@
             </table>
         </div>
     </div>
-    {% if inventory_data %}
+    {% if inventory_items %}
     <div class="card-footer bg-light">
         <div class="row">
             <div class="col-md-6">
@@ -166,7 +175,7 @@
                 </small>
             </div>
             <div class="col-md-6 text-end">
-                <strong>Total Items:</strong> {{ inventory_data|length }}
+                <strong>Total Items:</strong> {{ inventory_items|length }}
             </div>
         </div>
     </div>
