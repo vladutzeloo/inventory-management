@@ -13,6 +13,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('receipts.new') }}" id="receiptForm" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <!-- Receipt Header Information -->
                     <div class="card mb-4 bg-blue-light">
                         <div class="card-body">

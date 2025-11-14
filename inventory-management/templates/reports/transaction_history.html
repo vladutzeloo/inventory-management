@@ -16,6 +16,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('reports.transaction_history') }}" class="row g-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="col-md-3">
                 <label for="type" class="form-label">
                     <i class="fas fa-filter text-blue"></i> Transaction Type

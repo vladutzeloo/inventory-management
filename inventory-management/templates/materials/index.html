@@ -22,6 +22,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('materials.index') }}" class="row g-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="col-md-5">
                 <div class="input-group">
                     <span class="input-group-text bg-white">
@@ -195,6 +196,7 @@
 
 <!-- Delete Confirmation Form -->
 <form id="deleteForm" method="POST" style="display: none;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 </form>
 {% endblock %}
 
