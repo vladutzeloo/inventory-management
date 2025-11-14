@@ -62,7 +62,7 @@
                                 <i class="fas fa-cube"></i> Select Item/Material
                                 <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="item_id" name="item_id" required disabled>
+                            <select class="form-select select2" id="item_id" name="item_id" data-placeholder="Search for item or material..." required disabled>
                                 <option value="">First select a type...</option>
                             </select>
                         </div>
@@ -78,10 +78,11 @@
                                 <i class="fas fa-warehouse"></i> From Location
                                 <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select location-select"
+                            <select class="form-select select2 location-select"
                                     id="from_location_id"
                                     name="from_location_id"
                                     data-bin-select="from_bin_id"
+                                    data-placeholder="Search for location..."
                                     required>
                                 <option value="">Select From Location</option>
                                 {% for location in locations %}
@@ -91,11 +92,13 @@
                         </div>
                         <div class="col-md-6">
                             <label for="from_bin_id" class="form-label">
-                                <i class="fas fa-box-open"></i> From Bin (Optional)
+                                <i class="fas fa-box-open"></i> From Bin
+                                <i class="fas fa-info-circle text-muted" title="Optional: Choose a specific bin within the location"></i>
                             </label>
-                            <select class="form-select bin-select"
+                            <select class="form-select select2 bin-select"
                                     id="from_bin_id"
                                     name="from_bin_id"
+                                    data-placeholder="Optional: Select bin..."
                                     disabled>
                                 <option value="">Select location first...</option>
                             </select>
@@ -115,10 +118,11 @@
                                 <i class="fas fa-warehouse"></i> To Location
                                 <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select location-select"
+                            <select class="form-select select2 location-select"
                                     id="to_location_id"
                                     name="to_location_id"
                                     data-bin-select="to_bin_id"
+                                    data-placeholder="Search for location..."
                                     required>
                                 <option value="">Select To Location</option>
                                 {% for location in locations %}
@@ -128,11 +132,13 @@
                         </div>
                         <div class="col-md-6">
                             <label for="to_bin_id" class="form-label">
-                                <i class="fas fa-box-open"></i> To Bin (Optional)
+                                <i class="fas fa-box-open"></i> To Bin
+                                <i class="fas fa-info-circle text-muted" title="Optional: Choose a specific bin within the location"></i>
                             </label>
-                            <select class="form-select bin-select"
+                            <select class="form-select select2 bin-select"
                                     id="to_bin_id"
                                     name="to_bin_id"
+                                    data-placeholder="Optional: Select bin..."
                                     disabled>
                                 <option value="">Select location first...</option>
                             </select>
