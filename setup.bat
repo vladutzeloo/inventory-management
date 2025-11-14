@@ -13,15 +13,38 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [1/5] Checking Python version...
+echo [1/6] Checking Python version...
 python --version
+echo.
+
+:: Setup .env file with SECRET_KEY
+echo [2/6] Setting up environment configuration...
+cd /d "%~dp0"
+if exist .env (
+    echo .env file already exists, skipping...
+) else (
+    if not exist .env.example (
+        echo ERROR: .env.example not found!
+        pause
+        exit /b 1
+    )
+    echo Generating secure SECRET_KEY...
+    python -c "import secrets; key = secrets.token_hex(32); content = open('.env.example').read().replace('SECRET_KEY=your-secret-key-here-generate-a-random-string', f'SECRET_KEY={key}'); open('.env', 'w').write(content); print(f'Created .env with SECRET_KEY: {key[:16]}...')"
+    if errorlevel 1 (
+        echo ERROR: Failed to create .env file
+        echo Please manually copy .env.example to .env and set SECRET_KEY
+        pause
+        exit /b 1
+    )
+    echo .env file created successfully!
+)
 echo.
 
 :: Navigate to the project directory
 cd /d "%~dp0inventory-management"
 
 :: Create virtual environment
-echo [2/5] Creating virtual environment...
+echo [3/6] Creating virtual environment...
 if exist venv (
     echo Virtual environment already exists, skipping creation...
 ) else (
@@ -36,7 +59,7 @@ if exist venv (
 echo.
 
 :: Activate virtual environment
-echo [3/5] Activating virtual environment...
+echo [4/6] Activating virtual environment...
 call venv\Scripts\activate.bat
 if errorlevel 1 (
     echo ERROR: Failed to activate virtual environment
@@ -46,7 +69,7 @@ if errorlevel 1 (
 echo.
 
 :: Install dependencies
-echo [4/5] Installing dependencies...
+echo [5/6] Installing dependencies...
 pip install -r requirements.txt
 if errorlevel 1 (
     echo ERROR: Failed to install dependencies
@@ -56,7 +79,7 @@ if errorlevel 1 (
 echo.
 
 :: Initialize database with sample data
-echo [5/5] Initializing database with sample data...
+echo [6/6] Initializing database with sample data...
 python sample_data.py
 if errorlevel 1 (
     echo ERROR: Failed to initialize database

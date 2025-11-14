@@ -47,13 +47,28 @@ A professional, production-ready inventory management system with FIFO batch tra
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
+### Windows (Easiest - One Command!)
+
+```batch
+# Run the automated setup - handles everything including .env creation
+setup.bat
+
+# Then launch the server
+launch_server.bat
+```
+
+Access at: http://localhost:5001
+
+The `setup.bat` script automatically:
+- Creates `.env` file with a secure random SECRET_KEY
+- Sets up Python virtual environment
+- Installs all dependencies
+- Initializes the database with sample data
+
+### Linux/Mac - Docker (Recommended)
 
 ```bash
-# Clone and navigate
-cd inventory-management
-
-# Configure environment (automated setup with secure SECRET_KEY)
+# Configure environment (automated)
 python3 setup_env.py
 
 # Or manually:
@@ -67,12 +82,10 @@ python3 setup_env.py
 
 Access at: http://localhost:5001
 
-### Option 2: Manual Installation
+### Linux/Mac - Manual Installation
 
 ```bash
-cd inventory-management
-
-# Configure environment (automated setup with secure SECRET_KEY)
+# Configure environment (automated)
 python3 setup_env.py
 
 # Or manually:
@@ -83,7 +96,7 @@ cd inventory-management
 
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
