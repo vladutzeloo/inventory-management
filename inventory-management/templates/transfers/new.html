@@ -93,16 +93,17 @@
                         <div class="col-md-6">
                             <label for="from_bin_id" class="form-label">
                                 <i class="fas fa-box-open"></i> From Bin
-                                <i class="fas fa-info-circle text-muted" title="Optional: Choose a specific bin within the location"></i>
+                                <span class="text-danger">*</span>
                             </label>
                             <select class="form-select select2 bin-select"
                                     id="from_bin_id"
                                     name="from_bin_id"
-                                    data-placeholder="Optional: Select bin..."
+                                    data-placeholder="Select bin..."
+                                    required
                                     disabled>
                                 <option value="">Select location first...</option>
                             </select>
-                            <div class="form-text">Optional: Select specific bin within location</div>
+                            <div class="form-text">Select specific bin within location</div>
                         </div>
                     </div>
 
@@ -133,16 +134,17 @@
                         <div class="col-md-6">
                             <label for="to_bin_id" class="form-label">
                                 <i class="fas fa-box-open"></i> To Bin
-                                <i class="fas fa-info-circle text-muted" title="Optional: Choose a specific bin within the location"></i>
+                                <span class="text-danger">*</span>
                             </label>
                             <select class="form-select select2 bin-select"
                                     id="to_bin_id"
                                     name="to_bin_id"
-                                    data-placeholder="Optional: Select bin..."
+                                    data-placeholder="Select bin..."
+                                    required
                                     disabled>
                                 <option value="">Select location first...</option>
                             </select>
-                            <div class="form-text">Optional: Select specific bin within location</div>
+                            <div class="form-text">Select specific bin within location</div>
                         </div>
                     </div>
 
@@ -316,54 +318,94 @@ document.querySelectorAll('.location-select').forEach(locationSelect => {
         const binSelectId = this.getAttribute('data-bin-select');
         const binSelect = document.getElementById(binSelectId);
 
+        console.log('Location changed:', locationId, 'for bin select:', binSelectId);
+
         if (!locationId) {
+            // Destroy Select2 before modifying
+            if ($(binSelect).hasClass('select2-hidden-accessible')) {
+                $(binSelect).select2('destroy');
+            }
             binSelect.innerHTML = '<option value="">Select location first...</option>';
             binSelect.disabled = true;
             return;
         }
 
         // Show loading state
+        if ($(binSelect).hasClass('select2-hidden-accessible')) {
+            $(binSelect).select2('destroy');
+        }
         binSelect.innerHTML = '<option value="">Loading bins...</option>';
         binSelect.disabled = true;
 
         try {
             // Check cache first
             if (binsCache[locationId]) {
+                console.log('Using cached bins for location', locationId);
                 populateBins(binSelect, binsCache[locationId]);
+                // Trigger availability check after bins loaded
+                if (binSelectId === 'from_bin_id') {
+                    setTimeout(checkAvailableQuantity, 100);
+                }
                 return;
             }
 
             // Fetch bins from server
+            console.log('Fetching bins from server for location', locationId);
             const response = await fetch(`/locations/api/bins/${locationId}`);
             if (!response.ok) {
-                throw new Error('Failed to fetch bins');
+                throw new Error(`Failed to fetch bins: ${response.status}`);
             }
 
             const bins = await response.json();
+            console.log('Received bins:', bins);
             binsCache[locationId] = bins;
             populateBins(binSelect, bins);
 
+            // Trigger availability check after bins loaded
+            if (binSelectId === 'from_bin_id') {
+                setTimeout(checkAvailableQuantity, 100);
+            }
+
         } catch (error) {
             console.error('Error loading bins:', error);
-            binSelect.innerHTML = '<option value="">No bins (optional)</option>';
-            binSelect.disabled = false;
+            alert('Error loading bins: ' + error.message + '\nPlease check if the location has bins configured.');
+            binSelect.innerHTML = '<option value="">Error loading bins</option>';
+            binSelect.disabled = true;
         }
     });
 });
 
 function populateBins(selectElement, bins) {
-    selectElement.innerHTML = '<option value="">No bin (location level)</option>';
+    // Destroy Select2 if it exists
+    if ($(selectElement).hasClass('select2-hidden-accessible')) {
+        $(selectElement).select2('destroy');
+    }
+
+    // Clear and populate options
+    selectElement.innerHTML = '<option value="">Select bin...</option>';
 
     if (bins && bins.length > 0) {
         bins.forEach(bin => {
             const option = document.createElement('option');
             option.value = bin.id;
-            option.textContent = bin.bin_code;
+            option.textContent = bin.bin_code + (bin.description ? ' - ' + bin.description : '');
             selectElement.appendChild(option);
         });
+        selectElement.disabled = false;
+    } else {
+        selectElement.innerHTML = '<option value="">No bins available</option>';
+        selectElement.disabled = true;
     }
 
-    selectElement.disabled = false;
+    // Reinitialize Select2
+    $(selectElement).select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: false,
+        placeholder: 'Select bin...'
+    });
+
+    console.log('Bins populated for', selectElement.id, ':', bins.length, 'bins');
 }
 
 // Form validation
