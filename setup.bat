@@ -79,12 +79,18 @@ if errorlevel 1 (
 echo.
 
 :: Initialize database with sample data
-echo [6/6] Initializing database with sample data...
-python sample_data.py
-if errorlevel 1 (
-    echo ERROR: Failed to initialize database
-    pause
-    exit /b 1
+echo [6/6] Initializing database...
+if exist data\inventory.db (
+    echo Database already exists, skipping sample data creation...
+    echo WARNING: To recreate the database with sample data, delete data\inventory.db first
+) else (
+    echo Creating database with sample data...
+    python sample_data.py
+    if errorlevel 1 (
+        echo ERROR: Failed to initialize database
+        pause
+        exit /b 1
+    )
 )
 echo.
 

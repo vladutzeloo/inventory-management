@@ -8,9 +8,10 @@ A professional, production-ready inventory management system with FIFO batch tra
 - **FIFO Batch Tracking** - Automatic first-in-first-out inventory management
 - **Multi-Location Support** - Warehouse, shipping, and production locations with bin-level tracking
 - **Materials & Items Management** - Comprehensive master data management
+- **Internal Order Tracking** ✨ NEW - Track internal production orders on receipts and transfers
 - **Operations**
-  - Receipts with multi-line support
-  - Location transfers with automatic FIFO consumption
+  - Receipts with multi-line support and internal/external order tracking
+  - Location transfers with automatic FIFO consumption and production order references
   - Stock adjustments with full audit trail
   - Scrap tracking
 - **Comprehensive Reporting**
@@ -222,7 +223,30 @@ See `.env.example` for all available configuration options:
 
 ### Database Migration
 
-To change database type:
+**Running Schema Migrations:**
+
+If you have an existing database and need to apply new schema changes (like adding internal order number tracking):
+
+**Windows:**
+```batch
+cd inventory-management
+run_migration.bat
+```
+
+**Linux/Mac:**
+```bash
+cd inventory-management
+source venv/bin/activate
+python migrations/add_internal_order_number.py
+```
+
+The migration script will:
+- Check if the new columns already exist
+- Add `internal_order_number` to receipts table
+- Add `internal_order_number` to transfers table
+- Preserve all existing data
+
+**To change database type:**
 
 1. Update `DATABASE_URL` in `.env`
 2. Restart the application
