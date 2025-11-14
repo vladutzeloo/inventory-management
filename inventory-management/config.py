@@ -15,7 +15,13 @@ class Config:
     """Base configuration"""
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
-        raise ValueError("SECRET_KEY environment variable is not set! Please set it in your .env file.")
+        import warnings
+        warnings.warn(
+            "SECRET_KEY environment variable is not set! "
+            "Using a temporary key. Set SECRET_KEY in your .env file for production.",
+            UserWarning
+        )
+        SECRET_KEY = 'temporary-secret-key-please-change-in-production'
 
     # Database
     DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///data/inventory.db')
@@ -63,6 +69,12 @@ class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_ECHO = False
     # Production MUST have SECRET_KEY set
+    def __init__(self):
+        if not os.environ.get('SECRET_KEY'):
+            raise ValueError(
+                "SECRET_KEY environment variable is REQUIRED for production! "
+                "Please set it in your .env file to a secure random value."
+            )
 
 
 class TestingConfig(Config):
