@@ -133,19 +133,56 @@ def view(id):
 @bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
-    """Delete receipt (should check for batch usage)"""
+    """Delete receipt - reverses all inventory transactions"""
     receipt = Receipt.query.get_or_404(id)
 
     try:
+        from models import Batch, InventoryLevel, InventoryTransaction
+
         # Check if batches from this receipt have been consumed
         for item in receipt.items:
-            if item.batch and item.batch.quantity_available < item.batch.quantity_original:
-                flash(f'Cannot delete receipt - batch {item.batch.batch_number} has been partially consumed.', 'danger')
-                return redirect(url_for('receipts.index'))
+            if item.batch:
+                # Check if batch has been consumed
+                if item.batch.quantity_available < item.batch.quantity_original:
+                    flash(f'Cannot delete receipt - batch {item.batch.batch_number} has been partially consumed. '
+                          f'({item.batch.quantity_original - item.batch.quantity_available} units used)', 'danger')
+                    return redirect(url_for('receipts.index'))
 
-        # TODO: Implement proper reversal of inventory transactions
-        flash('Receipt deletion not fully implemented - please contact administrator.', 'warning')
-        return redirect(url_for('receipts.index'))
+        # Reverse all transactions for this receipt
+        for item in receipt.items:
+            # Get the batch associated with this receipt item
+            if item.batch:
+                batch = item.batch
+
+                # Reverse inventory level
+                inv_level = InventoryLevel.query.filter_by(
+                    material_id=batch.material_id,
+                    item_id=batch.item_id,
+                    location_id=batch.location_id,
+                    bin_id=batch.bin_id
+                ).first()
+
+                if inv_level:
+                    inv_level.quantity -= batch.quantity_available
+                    if inv_level.quantity <= 0:
+                        db.session.delete(inv_level)
+
+                # Mark related inventory transactions as reversed
+                InventoryTransaction.query.filter_by(
+                    batch_id=batch.id
+                ).delete()
+
+                # Delete the batch
+                db.session.delete(batch)
+
+            # Delete the receipt item
+            db.session.delete(item)
+
+        # Delete the receipt
+        db.session.delete(receipt)
+        db.session.commit()
+
+        flash(f'Receipt "{receipt.receipt_number}" deleted successfully!', 'success')
 
     except Exception as e:
         db.session.rollback()

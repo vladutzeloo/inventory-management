@@ -193,7 +193,7 @@ class Batch(db.Model):
     quantity_available = db.Column(db.Float, nullable=False)
 
     received_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
-    cost_per_unit = db.Column(db.Float, nullable=False)
+    cost_per_unit = db.Column(db.Numeric(10, 4), nullable=False)  # Precision for currency
     supplier_batch_number = db.Column(db.String(100))
     po_number = db.Column(db.String(100))  # External ERP reference
 
@@ -276,7 +276,7 @@ class ReceiptItem(db.Model):
     bin_id = db.Column(db.Integer, db.ForeignKey('bins.id'), nullable=True)
 
     quantity = db.Column(db.Float, nullable=False)
-    cost_per_unit = db.Column(db.Float, nullable=False)
+    cost_per_unit = db.Column(db.Numeric(10, 4), nullable=False)  # Precision for currency
     supplier_batch_number = db.Column(db.String(100))
     batch_id = db.Column(db.Integer, db.ForeignKey('batches.id'), nullable=True)  # Created batch
 
@@ -367,7 +367,7 @@ class TransferBatch(db.Model):
     transfer_id = db.Column(db.Integer, db.ForeignKey('transfers.id'), nullable=False)
     batch_id = db.Column(db.Integer, db.ForeignKey('batches.id'), nullable=False)
     quantity_transferred = db.Column(db.Float, nullable=False)
-    cost_per_unit = db.Column(db.Float, nullable=False)  # From batch at time of transfer
+    cost_per_unit = db.Column(db.Numeric(10, 4), nullable=False)  # From batch at time of transfer
 
     def __repr__(self):
         return f'<TransferBatch {self.transfer_id}: Batch {self.batch_id}, Qty {self.quantity_transferred}>'
@@ -455,7 +455,7 @@ class ScrapBatch(db.Model):
     scrap_id = db.Column(db.Integer, db.ForeignKey('scraps.id'), nullable=False)
     batch_id = db.Column(db.Integer, db.ForeignKey('batches.id'), nullable=False)
     quantity_scrapped = db.Column(db.Float, nullable=False)
-    cost_per_unit = db.Column(db.Float, nullable=False)  # From batch at time of scrap
+    cost_per_unit = db.Column(db.Numeric(10, 4), nullable=False)  # From batch at time of scrap
 
     def __repr__(self):
         return f'<ScrapBatch {self.scrap_id}: Batch {self.batch_id}, Qty {self.quantity_scrapped}>'

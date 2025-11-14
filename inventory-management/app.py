@@ -3,8 +3,11 @@ Inventory Management System - Main Application
 Flask application with FIFO batch tracking
 """
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, redirect, url_for, flash
 from flask_login import LoginManager, current_user
+from flask_wtf.csrf import CSRFProtect
 from config import config
 from models import db, User
 
@@ -12,6 +15,9 @@ from models import db, User
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Please log in to access this page.'
+
+# Initialize CSRF Protection
+csrf = CSRFProtect()
 
 
 @login_manager.user_loader
@@ -37,6 +43,28 @@ def create_app(config_name='default'):
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
+    csrf.init_app(app)
+
+    # Configure logging
+    if not app.debug and not app.testing:
+        # Create logs directory if it doesn't exist
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+
+        # File handler
+        file_handler = RotatingFileHandler(
+            'logs/app.log',
+            maxBytes=10240000,  # 10MB
+            backupCount=10
+        )
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Inventory Management System startup')
 
     # Register blueprints
     from routes import auth, dashboard, materials, items, locations
@@ -60,6 +88,27 @@ def create_app(config_name='default'):
         if current_user.is_authenticated:
             return redirect(url_for('dashboard.index'))
         return redirect(url_for('auth.login'))
+
+    # Health check endpoint for monitoring
+    @app.route('/health')
+    def health_check():
+        """Health check endpoint for load balancers and monitoring"""
+        from flask import jsonify
+        try:
+            # Check database connection
+            db.session.execute(db.text('SELECT 1'))
+            return jsonify({
+                'status': 'healthy',
+                'database': 'connected',
+                'version': app.config['APP_VERSION']
+            }), 200
+        except Exception as e:
+            app.logger.error(f'Health check failed: {str(e)}')
+            return jsonify({
+                'status': 'unhealthy',
+                'database': 'disconnected',
+                'error': str(e)
+            }), 503
 
     # Error handlers
     @app.errorhandler(404)
