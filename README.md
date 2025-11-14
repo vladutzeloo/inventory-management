@@ -114,6 +114,30 @@ Access at: http://localhost:5001
 
 **⚠️ Change the password immediately after first login!**
 
+### User Management
+
+Manage user accounts via command line:
+
+**Windows:**
+```batch
+cd inventory-management
+manage_users.bat
+```
+
+**Linux/Mac:**
+```bash
+cd inventory-management
+source venv/bin/activate
+python manage_users.py
+```
+
+Features:
+- List all users
+- Add new user
+- Change password
+- Enable/Disable user
+- Delete user
+
 ## Production Deployment
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed production deployment instructions including:
