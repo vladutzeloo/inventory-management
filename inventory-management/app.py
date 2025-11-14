@@ -67,7 +67,7 @@ def create_app(config_name='default'):
         app.logger.info('Inventory Management System startup')
 
     # Register blueprints
-    from routes import auth, dashboard, materials, items, locations
+    from routes import auth, dashboard, materials, items, locations, bins
     from routes import receipts, transfers, adjustments, scraps, reports
 
     app.register_blueprint(auth.bp)
@@ -75,6 +75,7 @@ def create_app(config_name='default'):
     app.register_blueprint(materials.bp, url_prefix='/materials')
     app.register_blueprint(items.bp, url_prefix='/items')
     app.register_blueprint(locations.bp, url_prefix='/locations')
+    app.register_blueprint(bins.bp, url_prefix='/bins')
     app.register_blueprint(receipts.bp, url_prefix='/receipts')
     app.register_blueprint(transfers.bp, url_prefix='/transfers')
     app.register_blueprint(adjustments.bp, url_prefix='/adjustments')

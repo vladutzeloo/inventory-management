@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Bin Management - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-boxes-stacked text-primary"></i> Bin Management</h2>
+    <div>
+        <a href="{{ url_for('locations.index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-warehouse"></i> Manage Locations & Bins
+        </a>
+    </div>
+</div>
+
+<!-- Info Banner -->
+<div class="alert alert-primary">
+    <i class="fas fa-info-circle"></i> <strong>Quick Bin Assignment:</strong>
+    Easily move items between bins or assign items to specific bins. Select a location below to see all inventory, then use the dropdown to assign items to bins.
+</div>
+
+<!-- Location Filter -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('bins.index') }}" class="row g-3">
+            <div class="col-md-10">
+                <label for="location_id" class="form-label">
+                    <i class="fas fa-filter text-primary"></i> Filter by Location
+                </label>
+                <select class="form-select select2"
+                        id="location_id"
+                        name="location_id"
+                        data-placeholder="Select a location to view inventory..."
+                        onchange="this.form.submit()">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}" {% if location.id == selected_location_id %}selected{% endif %}>
+                        {{ location.code }} - {{ location.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-clipboard-list"></i>
+            {% if selected_location_id %}
+                Inventory in Selected Location
+            {% else %}
+                All Inventory (Select a location to assign bins)
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Item/Material</th>
+                        <th>Location</th>
+                        <th class="text-center">Current Bin</th>
+                        <th class="text-end">Quantity</th>
+                        <th class="text-center" style="width: 300px;">Assign to Bin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if inventory_data %}
+                        {% for inv, mat_name, item_name, loc_code, loc_name, bin_code in inventory_data %}
+                        <tr>
+                            <td>
+                                <strong class="text-primary">{{ mat_name or item_name }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    {% if mat_name %}
+                                    <i class="fas fa-cube"></i> Material
+                                    {% else %}
+                                    <i class="fas fa-box"></i> Item
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                <strong>{{ loc_code }}</strong>
+                                <br>
+                                <small class="text-muted">{{ loc_name }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if bin_code %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-box-open"></i> {{ bin_code }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-warehouse"></i> Location Level
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <strong>{{ "%.2f"|format(inv.quantity) }}</strong>
+                                <small class="text-muted">
+                                    {{ inv.material.unit_of_measure if inv.material else inv.item.unit_of_measure }}
+                                </small>
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('bins.assign') }}" class="d-flex gap-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="inventory_id" value="{{ inv.id }}"/>
+                                    <input type="hidden" name="location_id" value="{{ selected_location_id or '' }}"/>
+
+                                    <select class="form-select form-select-sm select2-bin"
+                                            name="new_bin_id"
+                                            data-location-id="{{ inv.location_id }}"
+                                            style="flex: 1;">
+                                        <option value="">Location Level (No Bin)</option>
+                                        {% for bin in inv.location.bins %}
+                                            {% if bin.active %}
+                                            <option value="{{ bin.id }}"
+                                                    {% if inv.bin_id == bin.id %}selected{% endif %}>
+                                                {{ bin.bin_code }}
+                                            </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+
+                                    <button type="submit"
+                                            class="btn btn-sm btn-primary"
+                                            title="Assign to bin">
+                                        <i class="fas fa-arrow-right"></i> Move
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                {% if selected_location_id %}
+                                <p>No inventory found in this location.</p>
+                                {% else %}
+                                <p>No inventory found. Select a location above to view items.</p>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if inventory_data %}
+    <div class="card-footer bg-light">
+        <div class="row">
+            <div class="col-md-6">
+                <small class="text-muted">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Tip:</strong> Select a bin from the dropdown and click "Move" to assign the item to that bin. Choose "Location Level (No Bin)" to store at the location level.
+                </small>
+            </div>
+            <div class="col-md-6 text-end">
+                <strong>Total Items:</strong> {{ inventory_data|length }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Help Card -->
+<div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+        <h6 class="mb-0"><i class="fas fa-question-circle"></i> How Bin Management Works</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">What are Bins?</h6>
+                <ul class="small">
+                    <li><strong>Bins</strong> are specific storage locations within a warehouse/location</li>
+                    <li>Examples: A1, B2, Shelf-3, Bay-12, etc.</li>
+                    <li>Use bins for precise inventory tracking in large warehouses</li>
+                    <li><strong>Optional:</strong> You can store items at the location level without bins</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary">Quick Steps</h6>
+                <ol class="small">
+                    <li><strong>Filter:</strong> Select a location from the dropdown above</li>
+                    <li><strong>View:</strong> See all inventory in that location</li>
+                    <li><strong>Assign:</strong> Choose a bin from each item's dropdown</li>
+                    <li><strong>Move:</strong> Click the "Move" button to assign</li>
+                </ol>
+            </div>
+        </div>
+        <hr>
+        <div class="alert alert-primary mb-0">
+            <strong><i class="fas fa-warehouse"></i> Need to create bins?</strong>
+            Go to <a href="{{ url_for('locations.index') }}" class="alert-link">Locations</a> →
+            Select a location → Click "Manage Bins" to add new bins.
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for bin selects
+    $('.select2-bin').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        minimumResultsForSearch: 5 // Show search box if more than 5 items
+    });
+});
+</script>
+{% endblock %}
