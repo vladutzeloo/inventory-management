@@ -1,0 +1,68 @@
+========================================
+INVENTORY MANAGEMENT SYSTEM
+Quick Start Guide
+========================================
+
+FIRST TIME SETUP:
+------------------
+1. Double-click setup.bat
+   - This will:
+     * Create a virtual environment
+     * Install all required packages
+     * Initialize the database with sample data
+
+2. Wait for setup to complete (may take a few minutes)
+
+3. When you see "Setup completed successfully", press any key
+
+
+STARTING THE APPLICATION:
+--------------------------
+1. Double-click launch_server.bat
+
+2. Open your web browser and go to:
+   http://localhost:5001
+
+3. Login with:
+   Username: admin
+   Password: admin123
+
+
+IF YOU GET ERRORS:
+-------------------
+1. "Database not found" or "No such table"
+   Solution: Run init_db.bat to reinitialize the database
+
+2. "ModuleNotFoundError" or "Import Error"
+   Solution: Run setup.bat again
+
+3. "Port already in use"
+   Solution: Close any other applications using port 5001
+
+4. Operations/Forms not working
+   Solution:
+   - Make sure you ran setup.bat first
+   - Check that the database was created successfully
+   - Look in the inventory-management/data/ folder for inventory.db
+
+
+TROUBLESHOOTING:
+----------------
+- All templates are located in: inventory-management/templates/
+- Database file is at: inventory-management/data/inventory.db
+- If you need to start fresh, delete the data folder and run init_db.bat
+
+
+FEATURES AVAILABLE:
+-------------------
+- Master Data: Materials, Items, Locations (with bins)
+- Operations: Receipts, Transfers, Adjustments, Scrap tracking
+- Reports: Stock by Location, Inventory Valuation, Low Stock Alerts, Transaction History
+- Dashboard: Real-time metrics and charts
+
+All features use FIFO (First-In-First-Out) batch tracking for accurate inventory management.
+
+
+SUPPORT:
+--------
+Check the README.md file in the inventory-management folder for detailed documentation.

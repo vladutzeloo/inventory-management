@@ -131,20 +131,24 @@ def create_app(config_name='default'):
 
     # Create database tables
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
 
-        # Create default admin user if no users exist
-        if User.query.count() == 0:
-            admin = User(
-                username='admin',
-                full_name='System Administrator',
-                email='admin@example.com',
-                active=True
-            )
-            admin.set_password('admin123')
-            db.session.add(admin)
-            db.session.commit()
-            print("Default admin user created: admin / admin123")
+            # Create default admin user if no users exist
+            if User.query.count() == 0:
+                admin = User(
+                    username='admin',
+                    full_name='System Administrator',
+                    email='admin@example.com',
+                    active=True
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                print("Default admin user created: admin / admin123")
+        except Exception as e:
+            print(f"Error initializing database: {e}")
+            print("Please run setup.bat to properly initialize the database")
 
     return app
 

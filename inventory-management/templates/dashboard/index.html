@@ -7,6 +7,69 @@
     <h2><i class="fas fa-dashboard"></i> Dashboard</h2>
 </div>
 
+<!-- Quick Action Buttons - Prominent -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-primary text-white shadow-lg">
+            <div class="card-body p-4">
+                <h4 class="mb-3"><i class="fas fa-bolt"></i> Quick Actions</h4>
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('receipts.new') }}" class="btn btn-light btn-lg w-100 shadow">
+                            <i class="fas fa-truck-loading fa-2x mb-2 text-success"></i><br>
+                            <strong>New Receipt</strong><br>
+                            <small>Receive inventory</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('transfers.new') }}" class="btn btn-light btn-lg w-100 shadow">
+                            <i class="fas fa-exchange-alt fa-2x mb-2 text-primary"></i><br>
+                            <strong>New Transfer</strong><br>
+                            <small>Move between locations</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('adjustments.new') }}" class="btn btn-light btn-lg w-100 shadow">
+                            <i class="fas fa-edit fa-2x mb-2 text-warning"></i><br>
+                            <strong>Stock Adjustment</strong><br>
+                            <small>Adjust inventory levels</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('locations.index') }}" class="btn btn-light btn-lg w-100 shadow">
+                            <i class="fas fa-warehouse fa-2x mb-2 text-info"></i><br>
+                            <strong>Manage Bins</strong><br>
+                            <small>View & organize bins</small>
+                        </a>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('materials.new') }}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-cube"></i> Add Material
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('items.new') }}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-box"></i> Add Item
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('scraps.new') }}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-trash"></i> Record Scrap
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-chart-bar"></i> View Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Metrics Cards -->
 <div class="row mb-4">
     <div class="col-md-3">
@@ -192,41 +255,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('receipts.new') }}" class="btn btn-success w-100">
-                            <i class="fas fa-truck-loading"></i> New Receipt
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('transfers.new') }}" class="btn btn-primary w-100">
-                            <i class="fas fa-exchange-alt"></i> New Transfer
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('adjustments.new') }}" class="btn btn-warning w-100">
-                            <i class="fas fa-edit"></i> Stock Adjustment
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="{{ url_for('reports.inventory_valuation') }}" class="btn btn-info w-100">
-                            <i class="fas fa-chart-bar"></i> View Reports
-                        </a>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
