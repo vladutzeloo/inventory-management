@@ -364,12 +364,26 @@ document.querySelectorAll('.location-select').forEach(locationSelect => {
                 if (itemType && itemId) {
                     // Fetch bins WITH stock for this specific item
                     console.log(`Fetching bins with stock for ${itemType} ${itemId} at location ${locationId}`);
-                    const response = await fetch(`/locations/api/bins-with-stock?item_type=${itemType}&item_id=${itemId}&location_id=${locationId}`);
+                    const url = `/locations/api/bins-with-stock?item_type=${itemType}&item_id=${itemId}&location_id=${locationId}`;
+                    console.log('API URL:', url);
+
+                    const response = await fetch(url);
+                    console.log('Response status:', response.status);
+
                     if (!response.ok) {
-                        throw new Error(`Failed to fetch bins: ${response.status}`);
+                        const errorText = await response.text();
+                        console.error('API error response:', errorText);
+                        throw new Error(`Failed to fetch bins: ${response.status} - ${errorText}`);
                     }
+
                     bins = await response.json();
-                    console.log('Received bins with stock:', bins);
+                    console.log('✓ Received bins with stock from API:', bins);
+                    console.log('Number of bins:', bins.length);
+
+                    if (bins.length === 0) {
+                        alert(`No stock found for this item in location.\n\nPlease check:\n1. Item has been received to this location\n2. Bins contain stock\n3. Stock hasn't been fully consumed`);
+                    }
+
                     populateBinsWithQuantity(binSelect, bins);
                 } else {
                     // Item not selected yet, load all bins
@@ -447,15 +461,20 @@ function populateBins(selectElement, bins) {
 }
 
 function populateBinsWithQuantity(selectElement, bins) {
+    console.log('populateBinsWithQuantity called with:', bins);
+
     // Destroy Select2 if it exists
     if ($(selectElement).hasClass('select2-hidden-accessible')) {
+        console.log('Destroying existing Select2');
         $(selectElement).select2('destroy');
     }
 
     // Clear and populate options
+    selectElement.innerHTML = '';
     selectElement.innerHTML = '<option value="">Select bin...</option>';
 
     if (bins && bins.length > 0) {
+        console.log('Populating', bins.length, 'bins with quantities');
         bins.forEach(bin => {
             const option = document.createElement('option');
             option.value = bin.id;
@@ -463,22 +482,40 @@ function populateBinsWithQuantity(selectElement, bins) {
             const descText = bin.description ? ` - ${bin.description}` : '';
             option.textContent = `${bin.bin_code}${descText} (${bin.quantity.toFixed(2)} available)`;
             selectElement.appendChild(option);
+            console.log('Added bin option:', option.textContent);
         });
         selectElement.disabled = false;
+        console.log('Enabled select element');
     } else {
+        console.log('No bins with stock found');
         selectElement.innerHTML = '<option value="">No stock in any bin</option>';
         selectElement.disabled = true;
     }
 
-    // Reinitialize Select2
-    $(selectElement).select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        allowClear: false,
-        placeholder: 'Select bin...'
-    });
+    // Force enable before Select2 init
+    selectElement.disabled = false;
+    selectElement.removeAttribute('disabled');
 
-    console.log('Bins with stock populated for', selectElement.id, ':', bins.length, 'bins');
+    // Small delay before reinitializing Select2
+    setTimeout(() => {
+        console.log('Initializing Select2...');
+        $(selectElement).select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            allowClear: false,
+            placeholder: 'Select bin...',
+            disabled: false
+        });
+        console.log('Select2 initialized for', selectElement.id);
+
+        // Double-check it's enabled
+        if (bins && bins.length > 0) {
+            $(selectElement).prop('disabled', false);
+            console.log('Final check - element enabled');
+        }
+    }, 100);
+
+    console.log('Bins with stock populated for', selectElement.id, ':', bins ? bins.length : 0, 'bins');
 }
 
 // Form validation
