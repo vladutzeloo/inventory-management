@@ -462,18 +462,52 @@ $(document).ready(function() {
 
     // Form validation
     $('#receiptForm').on('submit', function(e) {
+        console.log('Form submit triggered');
+        console.log('Number of receipt items:', $('.dynamic-row').length);
+
+        // Check if we have at least one item
         if ($('.dynamic-row').length === 0) {
             e.preventDefault();
             alert('Please add at least one receipt item.');
             return false;
         }
 
+        // Check browser validation
         if (!this.checkValidity()) {
+            console.log('❌ Form validation failed');
+
+            // Find and log invalid fields
+            const invalidFields = $(this).find(':invalid');
+            console.log('Invalid fields count:', invalidFields.length);
+            invalidFields.each(function() {
+                const fieldName = $(this).attr('name') || $(this).attr('id') || 'unnamed field';
+                const fieldLabel = $(this).closest('.mb-3').find('label').text().trim() || fieldName;
+                console.log('  - Invalid field:', fieldLabel, '(', fieldName, ')');
+            });
+
             e.preventDefault();
             e.stopPropagation();
+            $(this).addClass('was-validated');
+
+            // Scroll to first invalid field
+            const firstInvalid = invalidFields.first();
+            if (firstInvalid.length) {
+                firstInvalid[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+                alert('Please fill in all required fields. Check the highlighted fields.');
+            }
+
+            return false;
         }
 
-        $(this).addClass('was-validated');
+        // Validation passed - show loading state
+        console.log('✓ Form validation passed, submitting...');
+        const submitBtn = $('#submitBtn');
+        submitBtn.prop('disabled', true);
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        // Form will submit naturally
+        return true;
     });
 });
 </script>
