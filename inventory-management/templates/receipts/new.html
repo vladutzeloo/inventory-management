@@ -150,7 +150,7 @@
                     <li><strong>Item Type:</strong> Select whether you're receiving a Material or Item (searchable dropdown)</li>
                     <li><strong>Supplier Batch:</strong> Batch number from supplier for traceability</li>
                     <li><strong>Location:</strong> Required - Where the goods will be stored (searchable dropdown)</li>
-                    <li><strong>Bin:</strong> <span class="text-primary">Optional but recommended</span> - Specific bin within the location for precise tracking. First select a location, then bins will appear. Leave empty if storing at location level.</li>
+                    <li><strong>Bin:</strong> <span class="text-danger">Required</span> - Specific bin within the location. First select a location, then bins will load automatically.</li>
                     <li><strong>Cost per Unit:</strong> Unit cost for FIFO batch costing</li>
                     <li><strong>Partial Receipts:</strong> You can receive items in multiple receipts using the same PO Number to track against the order</li>
                 </ul>
@@ -263,17 +263,16 @@ $(document).ready(function() {
                     <!-- Bin -->
                     <div class="col-md-2 mb-3">
                         <label class="form-label">
-                            <i class="fas fa-box-open text-primary"></i> Bin
-                            <i class="fas fa-info-circle text-muted" title="Optional: Choose a specific bin within the location"></i>
+                            <i class="fas fa-box-open text-primary"></i> Bin <span class="text-danger">*</span>
                         </label>
                         <select class="form-select select2 bin-select"
                                 name="bin_id_${rowIndex}"
                                 id="bin_id_${rowIndex}"
-                                data-placeholder="Optional: Select bin..."
+                                data-placeholder="Select bin..."
+                                required
                                 disabled>
                             <option value="">Select location first...</option>
                         </select>
-                        <small class="form-text text-muted">Optional</small>
                     </div>
 
                     <!-- Quantity -->
@@ -408,9 +407,11 @@ $(document).ready(function() {
     };
 
     // Update bin selector based on location
-    window.updateBinSelector = function(rowIndex) {
+    window.updateBinSelector = async function(rowIndex) {
         const locationId = $(`#location_id_${rowIndex}`).val();
         const binSelector = $(`#bin_id_${rowIndex}`);
+
+        console.log(`Updating bins for row ${rowIndex}, location: ${locationId}`);
 
         // Destroy Select2 first
         if (binSelector.hasClass('select2-hidden-accessible')) {
@@ -419,24 +420,66 @@ $(document).ready(function() {
 
         binSelector.empty();
 
-        if (locationId && binsByLocation[locationId]) {
-            binSelector.prop('disabled', false);
-            binSelector.append('<option value="">No Bin (Location Level)</option>');
-            binsByLocation[locationId].forEach(bin => {
-                binSelector.append(`<option value="${bin.id}">${bin.bin_code}</option>`);
-            });
-        } else {
+        if (!locationId) {
             binSelector.prop('disabled', true);
             binSelector.append('<option value="">Select location first...</option>');
+            binSelector.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select location first...',
+                allowClear: false
+            });
+            return;
+        }
+
+        // Show loading state
+        binSelector.prop('disabled', true);
+        binSelector.append('<option value="">Loading bins...</option>');
+
+        try {
+            // Fetch bins from API if not in cache
+            if (!binsByLocation[locationId]) {
+                const response = await fetch(`/locations/api/bins/${locationId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch bins');
+                }
+                binsByLocation[locationId] = await response.json();
+            }
+
+            const bins = binsByLocation[locationId];
+            console.log(`Found ${bins.length} bins for location ${locationId}`);
+
+            binSelector.empty();
+            binSelector.append('<option value="">Select bin...</option>');
+
+            if (bins && bins.length > 0) {
+                bins.forEach(bin => {
+                    const displayText = bin.description ? `${bin.bin_code} - ${bin.description}` : bin.bin_code;
+                    binSelector.append(`<option value="${bin.id}">${displayText}</option>`);
+                });
+                binSelector.prop('disabled', false);
+            } else {
+                binSelector.append('<option value="">No bins available</option>');
+                binSelector.prop('disabled', true);
+            }
+
+        } catch (error) {
+            console.error('Error loading bins:', error);
+            binSelector.empty();
+            binSelector.append('<option value="">Error loading bins</option>');
+            binSelector.prop('disabled', true);
+            alert('Error loading bins for this location. Please try again or contact support.');
         }
 
         // Reinitialize Select2
         binSelector.select2({
             theme: 'bootstrap-5',
             width: '100%',
-            placeholder: 'Optional: Select bin...',
-            allowClear: true
+            placeholder: 'Select bin...',
+            allowClear: false
         });
+
+        console.log(`Bin selector for row ${rowIndex} updated successfully`);
     };
 
     // Calculate total
@@ -462,18 +505,52 @@ $(document).ready(function() {
 
     // Form validation
     $('#receiptForm').on('submit', function(e) {
+        console.log('Form submit triggered');
+        console.log('Number of receipt items:', $('.dynamic-row').length);
+
+        // Check if we have at least one item
         if ($('.dynamic-row').length === 0) {
             e.preventDefault();
             alert('Please add at least one receipt item.');
             return false;
         }
 
+        // Check browser validation
         if (!this.checkValidity()) {
+            console.log('❌ Form validation failed');
+
+            // Find and log invalid fields
+            const invalidFields = $(this).find(':invalid');
+            console.log('Invalid fields count:', invalidFields.length);
+            invalidFields.each(function() {
+                const fieldName = $(this).attr('name') || $(this).attr('id') || 'unnamed field';
+                const fieldLabel = $(this).closest('.mb-3').find('label').text().trim() || fieldName;
+                console.log('  - Invalid field:', fieldLabel, '(', fieldName, ')');
+            });
+
             e.preventDefault();
             e.stopPropagation();
+            $(this).addClass('was-validated');
+
+            // Scroll to first invalid field
+            const firstInvalid = invalidFields.first();
+            if (firstInvalid.length) {
+                firstInvalid[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+                alert('Please fill in all required fields. Check the highlighted fields.');
+            }
+
+            return false;
         }
 
-        $(this).addClass('was-validated');
+        // Validation passed - show loading state
+        console.log('✓ Form validation passed, submitting...');
+        const submitBtn = $('#submitBtn');
+        submitBtn.prop('disabled', true);
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        // Form will submit naturally
+        return true;
     });
 });
 </script>
