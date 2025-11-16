@@ -205,10 +205,10 @@
                                     <span class="badge bg-danger">{{ scrap_batch.quantity_scrapped }}</span>
                                 </td>
                                 <td class="text-end">
-                                    ${{ "%.2f"|format(scrap_batch.cost_per_unit) }}
+                                    €{{ "%.2f"|format(scrap_batch.cost_per_unit) }}
                                 </td>
                                 <td class="text-end">
-                                    <strong>${{ "%.2f"|format(scrap_batch.quantity_scrapped * (scrap_batch.cost_per_unit|float)) }}</strong>
+                                    <strong>€{{ "%.2f"|format(scrap_batch.quantity_scrapped * (scrap_batch.cost_per_unit|float)) }}</strong>
                                 </td>
                             </tr>
                             {% set total_cost = total_cost + (scrap_batch.quantity_scrapped * (scrap_batch.cost_per_unit|float)) %}
@@ -218,7 +218,7 @@
                             <tr>
                                 <th colspan="4" class="text-end">Total Scrap Value:</th>
                                 <th class="text-end">
-                                    <span class="badge bg-danger fs-6">${{ "%.2f"|format(total_cost) }}</span>
+                                    <span class="badge bg-danger fs-6">€{{ "%.2f"|format(total_cost) }}</span>
                                 </th>
                             </tr>
                         </tfoot>

@@ -292,10 +292,10 @@
                                     <span class="badge bg-primary">{{ "%.2f"|format(tb.quantity_transferred) }}</span>
                                 </td>
                                 <td class="text-end">
-                                    <span class="text-muted">${{ "%.2f"|format(tb.cost_per_unit) }}</span>
+                                    <span class="text-muted">€{{ "%.2f"|format(tb.cost_per_unit) }}</span>
                                 </td>
                                 <td class="text-end">
-                                    <strong>${{ "%.2f"|format(batch_total) }}</strong>
+                                    <strong>€{{ "%.2f"|format(batch_total) }}</strong>
                                 </td>
                                 <td class="text-end">
                                     {% if tb.batch and tb.batch.quantity_available > 0 %}
@@ -311,7 +311,7 @@
                             <tr>
                                 <th colspan="5" class="text-end">Total Transfer Cost:</th>
                                 <th class="text-end">
-                                    <span class="text-primary fs-5">${{ "%.2f"|format(total_cost) }}</span>
+                                    <span class="text-primary fs-5">€{{ "%.2f"|format(total_cost) }}</span>
                                 </th>
                                 <th></th>
                             </tr>
@@ -347,7 +347,7 @@
                     </div>
                     <div class="col-md-6">
                         <p class="small mb-2">
-                            <strong>Average Cost:</strong> ${{ "%.2f"|format(total_cost / transfer.quantity) }} per unit
+                            <strong>Average Cost:</strong> €{{ "%.2f"|format(total_cost / transfer.quantity) }} per unit
                         </p>
                         <p class="small mb-0">
                             <strong>FIFO Method:</strong> Automatically consumed oldest batches first
@@ -389,7 +389,7 @@
                     <div class="card-body text-center">
                         <h6 class="card-title">Total Value</h6>
                         {% if transfer_batches %}
-                        <h3 class="mb-0">${{ "%.2f"|format(total_cost) }}</h3>
+                        <h3 class="mb-0">€{{ "%.2f"|format(total_cost) }}</h3>
                         {% else %}
                         <h3 class="mb-0">-</h3>
                         {% endif %}
@@ -402,7 +402,7 @@
                     <div class="card-body text-center">
                         <h6 class="card-title">Avg Unit Cost</h6>
                         {% if transfer_batches and transfer.quantity > 0 %}
-                        <h3 class="mb-0">${{ "%.2f"|format(total_cost / transfer.quantity) }}</h3>
+                        <h3 class="mb-0">€{{ "%.2f"|format(total_cost / transfer.quantity) }}</h3>
                         {% else %}
                         <h3 class="mb-0">-</h3>
                         {% endif %}
