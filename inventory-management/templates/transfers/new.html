@@ -311,6 +311,18 @@ document.getElementById('item_type').addEventListener('change', function() {
     }
 });
 
+// Item selection change - reload bins with stock for this specific item
+document.getElementById('item_id').addEventListener('change', function() {
+    const fromLocationId = document.getElementById('from_location_id').value;
+
+    // If from location is already selected, reload bins to show stock for this item
+    if (fromLocationId) {
+        console.log('Item changed, reloading bins with stock...');
+        // Trigger location change to reload bins
+        document.getElementById('from_location_id').dispatchEvent(new Event('change'));
+    }
+});
+
 // Location change handler - Load bins via AJAX
 document.querySelectorAll('.location-select').forEach(locationSelect => {
     locationSelect.addEventListener('change', async function() {
@@ -330,6 +342,10 @@ document.querySelectorAll('.location-select').forEach(locationSelect => {
             return;
         }
 
+        // For "from" location, load bins WITH stock quantities
+        // For "to" location, load all bins
+        const isFromLocation = binSelectId === 'from_bin_id';
+
         // Show loading state
         if ($(binSelect).hasClass('select2-hidden-accessible')) {
             $(binSelect).select2('destroy');
@@ -338,31 +354,53 @@ document.querySelectorAll('.location-select').forEach(locationSelect => {
         binSelect.disabled = true;
 
         try {
-            // Check cache first
-            if (binsCache[locationId]) {
-                console.log('Using cached bins for location', locationId);
-                populateBins(binSelect, binsCache[locationId]);
-                // Trigger availability check after bins loaded
-                if (binSelectId === 'from_bin_id') {
-                    setTimeout(checkAvailableQuantity, 100);
+            let bins = [];
+
+            if (isFromLocation) {
+                // Get item type and ID for from location
+                const itemType = document.getElementById('item_type').value;
+                const itemId = document.getElementById('item_id').value;
+
+                if (itemType && itemId) {
+                    // Fetch bins WITH stock for this specific item
+                    console.log(`Fetching bins with stock for ${itemType} ${itemId} at location ${locationId}`);
+                    const response = await fetch(`/locations/api/bins-with-stock?item_type=${itemType}&item_id=${itemId}&location_id=${locationId}`);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch bins: ${response.status}`);
+                    }
+                    bins = await response.json();
+                    console.log('Received bins with stock:', bins);
+                    populateBinsWithQuantity(binSelect, bins);
+                } else {
+                    // Item not selected yet, load all bins
+                    const cacheKey = locationId;
+                    if (!binsCache[cacheKey]) {
+                        const response = await fetch(`/locations/api/bins/${locationId}`);
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch bins: ${response.status}`);
+                        }
+                        binsCache[cacheKey] = await response.json();
+                    }
+                    populateBins(binSelect, binsCache[cacheKey]);
                 }
-                return;
+            } else {
+                // To location - load all bins
+                const cacheKey = locationId;
+                if (!binsCache[cacheKey]) {
+                    console.log('Fetching all bins for to_location', locationId);
+                    const response = await fetch(`/locations/api/bins/${locationId}`);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch bins: ${response.status}`);
+                    }
+                    binsCache[cacheKey] = await response.json();
+                }
+                bins = binsCache[cacheKey];
+                console.log('Received bins:', bins);
+                populateBins(binSelect, bins);
             }
-
-            // Fetch bins from server
-            console.log('Fetching bins from server for location', locationId);
-            const response = await fetch(`/locations/api/bins/${locationId}`);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch bins: ${response.status}`);
-            }
-
-            const bins = await response.json();
-            console.log('Received bins:', bins);
-            binsCache[locationId] = bins;
-            populateBins(binSelect, bins);
 
             // Trigger availability check after bins loaded
-            if (binSelectId === 'from_bin_id') {
+            if (isFromLocation) {
                 setTimeout(checkAvailableQuantity, 100);
             }
 
@@ -406,6 +444,41 @@ function populateBins(selectElement, bins) {
     });
 
     console.log('Bins populated for', selectElement.id, ':', bins.length, 'bins');
+}
+
+function populateBinsWithQuantity(selectElement, bins) {
+    // Destroy Select2 if it exists
+    if ($(selectElement).hasClass('select2-hidden-accessible')) {
+        $(selectElement).select2('destroy');
+    }
+
+    // Clear and populate options
+    selectElement.innerHTML = '<option value="">Select bin...</option>';
+
+    if (bins && bins.length > 0) {
+        bins.forEach(bin => {
+            const option = document.createElement('option');
+            option.value = bin.id;
+            // Show bin code, description, and available quantity
+            const descText = bin.description ? ` - ${bin.description}` : '';
+            option.textContent = `${bin.bin_code}${descText} (${bin.quantity.toFixed(2)} available)`;
+            selectElement.appendChild(option);
+        });
+        selectElement.disabled = false;
+    } else {
+        selectElement.innerHTML = '<option value="">No stock in any bin</option>';
+        selectElement.disabled = true;
+    }
+
+    // Reinitialize Select2
+    $(selectElement).select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: false,
+        placeholder: 'Select bin...'
+    });
+
+    console.log('Bins with stock populated for', selectElement.id, ':', bins.length, 'bins');
 }
 
 // Form validation
