@@ -273,3 +273,40 @@ def api_available_quantity():
             'available': False,
             'quantity': 0
         })
+
+
+@bp.route('/api/bins-with-stock')
+@login_required
+def api_bins_with_stock():
+    """API endpoint to get bins with stock quantities for a specific item/material at a location"""
+    item_type = request.args.get('item_type')  # 'material' or 'item'
+    item_id = request.args.get('item_id', type=int)
+    location_id = request.args.get('location_id', type=int)
+
+    if not item_type or not item_id or not location_id:
+        return jsonify({'error': 'Missing required parameters'}), 400
+
+    # Query inventory levels for this item/material at this location
+    query = InventoryLevel.query.filter_by(location_id=location_id)
+
+    if item_type == 'material':
+        query = query.filter_by(material_id=item_id)
+    elif item_type == 'item':
+        query = query.filter_by(item_id=item_id)
+    else:
+        return jsonify({'error': 'Invalid item type'}), 400
+
+    # Get all inventory levels with quantity > 0
+    inventory_levels = query.filter(InventoryLevel.quantity > 0).all()
+
+    bins_data = []
+    for inv in inventory_levels:
+        if inv.bin:
+            bins_data.append({
+                'id': inv.bin.id,
+                'bin_code': inv.bin.bin_code,
+                'description': inv.bin.description,
+                'quantity': inv.quantity
+            })
+
+    return jsonify(bins_data)

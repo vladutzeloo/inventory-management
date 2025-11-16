@@ -90,7 +90,7 @@
                                     {% set total.value = total.value + (item.quantity * (item.cost_per_unit|float)) %}
                                 {% endfor %}
                                 <strong class="text-success">
-                                    ${{ "%.2f"|format(total.value) }}
+                                    €{{ "%.2f"|format(total.value) }}
                                 </strong>
                             </td>
                             <td>
