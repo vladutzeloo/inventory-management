@@ -19,6 +19,7 @@ class Material(db.Model):
     description = db.Column(db.Text)
     category = db.Column(db.String(100))  # Legacy field - kept for backwards compatibility
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
+    provider_id = db.Column(db.Integer, db.ForeignKey('providers.id'), nullable=True)
     unit_of_measure = db.Column(db.String(20), nullable=False)  # kg, pcs, m, L, etc.
     reorder_level = db.Column(db.Float, default=0)
     reorder_quantity = db.Column(db.Float, default=0)
@@ -28,6 +29,7 @@ class Material(db.Model):
 
     # Relationships
     category_obj = db.relationship('Category', backref='materials', foreign_keys=[category_id])
+    provider = db.relationship('Provider', backref='materials', foreign_keys=[provider_id])
     inventory_levels = db.relationship('InventoryLevel', backref='material', lazy='dynamic',
                                       foreign_keys='InventoryLevel.material_id')
     batches = db.relationship('Batch', backref='material', lazy='dynamic',
@@ -578,6 +580,37 @@ class Client(db.Model):
 
     def __repr__(self):
         return f'<Client {self.code} - {self.name}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'code': self.code,
+            'contact_person': self.contact_person,
+            'email': self.email,
+            'phone': self.phone,
+            'address': self.address,
+            'active': self.active
+        }
+
+
+class Provider(db.Model):
+    """Providers/Suppliers for raw materials"""
+    __tablename__ = 'providers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), unique=True, nullable=False, index=True)
+    code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    contact_person = db.Column(db.String(200))
+    email = db.Column(db.String(200))
+    phone = db.Column(db.String(50))
+    address = db.Column(db.Text)
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Provider {self.code} - {self.name}>'
 
     def to_dict(self):
         return {

@@ -1,5 +1,5 @@
 """
-Migration script to add categories and clients tables
+Migration script to add categories, clients, and providers tables
 Run this script to update the database schema
 """
 import sqlite3
@@ -66,6 +66,32 @@ def migrate():
         else:
             print("✓ clients table already exists")
 
+        # Check if providers table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='providers'")
+        providers_exists = cursor.fetchone() is not None
+
+        if not providers_exists:
+            print("Creating providers table...")
+            cursor.execute("""
+                CREATE TABLE providers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name VARCHAR(200) NOT NULL UNIQUE,
+                    code VARCHAR(50) NOT NULL UNIQUE,
+                    contact_person VARCHAR(200),
+                    email VARCHAR(200),
+                    phone VARCHAR(50),
+                    address TEXT,
+                    active BOOLEAN DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute("CREATE INDEX idx_providers_name ON providers(name)")
+            cursor.execute("CREATE INDEX idx_providers_code ON providers(code)")
+            print("✓ Created providers table")
+        else:
+            print("✓ providers table already exists")
+
         # Check and add category_id to materials
         cursor.execute("PRAGMA table_info(materials)")
         material_columns = [column[1] for column in cursor.fetchall()]
@@ -76,6 +102,13 @@ def migrate():
             print("✓ Added category_id to materials")
         else:
             print("✓ category_id already exists in materials")
+
+        if 'provider_id' not in material_columns:
+            print("Adding provider_id to materials table...")
+            cursor.execute("ALTER TABLE materials ADD COLUMN provider_id INTEGER REFERENCES providers(id)")
+            print("✓ Added provider_id to materials")
+        else:
+            print("✓ provider_id already exists in materials")
 
         # Check and add category_id and client_id to items
         cursor.execute("PRAGMA table_info(items)")
