@@ -251,6 +251,17 @@ def api_available_quantity():
     inventories = query.all()
     total_quantity = sum(inv.quantity for inv in inventories)
 
+    # Build bin breakdown list
+    bins_breakdown = []
+    for inv in inventories:
+        if inv.quantity > 0:
+            bin_info = {
+                'bin_code': inv.bin.bin_code if inv.bin else 'No Bin',
+                'bin_description': inv.bin.description if inv.bin else '',
+                'quantity': inv.quantity
+            }
+            bins_breakdown.append(bin_info)
+
     if inventories and total_quantity > 0:
         # Get the item/material name and UOM from first record
         first_inv = inventories[0]
@@ -265,7 +276,8 @@ def api_available_quantity():
             'available': True,
             'quantity': total_quantity,
             'name': name,
-            'uom': uom
+            'uom': uom,
+            'bins': bins_breakdown
         })
     else:
         # Get name/uom even when no stock
@@ -284,7 +296,8 @@ def api_available_quantity():
             'available': False,
             'quantity': 0,
             'name': name,
-            'uom': uom
+            'uom': uom,
+            'bins': []
         })
 
 
