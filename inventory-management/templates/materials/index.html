@@ -72,6 +72,7 @@
                         <th>Name</th>
                         <th>Description</th>
                         <th>Category</th>
+                        <th>Provider</th>
                         <th>UoM</th>
                         <th class="text-end">Current Stock</th>
                         <th class="text-end">Reorder Level</th>
@@ -89,8 +90,17 @@
                             <small class="text-muted">{{ material.description[:50] }}{% if material.description|length > 50 %}...{% endif %}</small>
                         </td>
                         <td>
-                            {% if material.category %}
-                            <span class="badge bg-info">{{ material.category }}</span>
+                            {% if material.category_obj %}
+                            <span class="badge bg-info"><i class="fas fa-tag"></i> {{ material.category_obj.name }}</span>
+                            {% elif material.category %}
+                            <span class="badge bg-secondary"><i class="fas fa-tag"></i> {{ material.category }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if material.provider %}
+                            <small><i class="fas fa-truck text-primary"></i> {{ material.provider.name }}</small>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}

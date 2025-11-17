@@ -67,6 +67,7 @@
                         <th>Name</th>
                         <th>Description</th>
                         <th>Category</th>
+                        <th>Client</th>
                         <th>Unit</th>
                         <th class="text-end">Current Stock</th>
                         <th class="text-end">Reorder Level</th>
@@ -85,8 +86,17 @@
                                 <small class="text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</small>
                             </td>
                             <td>
-                                {% if item.category %}
-                                <span class="badge bg-info">{{ item.category }}</span>
+                                {% if item.category_obj %}
+                                <span class="badge bg-info"><i class="fas fa-tag"></i> {{ item.category_obj.name }}</span>
+                                {% elif item.category %}
+                                <span class="badge bg-secondary"><i class="fas fa-tag"></i> {{ item.category }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.client %}
+                                <small><i class="fas fa-users text-primary"></i> {{ item.client.name }}</small>
                                 {% else %}
                                 <span class="text-muted">-</span>
                                 {% endif %}
@@ -136,7 +146,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="9" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                 <p>No items found.</p>
                                 {% if search or category %}

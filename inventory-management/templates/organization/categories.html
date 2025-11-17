@@ -21,6 +21,7 @@
                                 <th>Name</th>
                                 <th>Type</th>
                                 <th>Description</th>
+                                <th>Usage</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -38,6 +39,22 @@
                                 </td>
                                 <td>{{ category.description or '-' }}</td>
                                 <td>
+                                    {% set mat_count = category.materials|length %}
+                                    {% set item_count = category.items|length %}
+                                    {% set total_count = mat_count + item_count %}
+                                    {% if total_count > 0 %}
+                                    <span class="badge bg-info">
+                                        {% if category.category_type == 'material' %}
+                                        <i class="fas fa-cube"></i> {{ mat_count }} material(s)
+                                        {% else %}
+                                        <i class="fas fa-box"></i> {{ item_count }} item(s)
+                                        {% endif %}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">Not in use</span>
+                                    {% endif %}
+                                </td>
+                                <td>
                                     {% if category.active %}
                                     <span class="badge bg-success">Active</span>
                                     {% else %}
@@ -45,14 +62,19 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('organization.edit_category', id=category.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('organization.edit_category', id=category.id) }}" class="btn btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" onclick="confirmDelete('{{ category.name }}', {{ category.id }}, {{ total_count }})" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="5" class="text-center text-muted">No categories found. Click "New Category" to create one.</td>
+                                <td colspan="6" class="text-center text-muted">No categories found. Click "New Category" to create one.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -62,4 +84,29 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Form -->
+<form id="deleteForm" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(categoryName, categoryId, usageCount) {
+    let message = `Are you sure you want to delete category "${categoryName}"?`;
+    if (usageCount > 0) {
+        message += `\n\nWARNING: This category is currently linked to ${usageCount} material(s)/item(s). You must unlink them first.`;
+        alert(message);
+        return;
+    }
+    message += '\n\nThis action cannot be undone.';
+
+    if (confirm(message)) {
+        const form = document.getElementById('deleteForm');
+        form.action = "{{ url_for('organization.delete_category', id=0) }}".replace('0', categoryId);
+        form.submit();
+    }
+}
+</script>
 {% endblock %}
