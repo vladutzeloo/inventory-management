@@ -130,11 +130,28 @@
                                 <h6 class="mb-2">
                                     <i class="fas fa-cubes"></i> Available Stock at Source Location
                                 </h6>
-                                <div class="d-flex align-items-center">
+                                <div class="d-flex align-items-center mb-3">
                                     <div class="badge bg-primary fs-5 me-3 px-3 py-2" id="availableQuantityBadge" style="color: #ffffff;">0</div>
                                     <div>
                                         <div id="availableQuantityText" class="fw-bold"></div>
                                         <small class="text-muted">This is the maximum quantity you can transfer</small>
+                                    </div>
+                                </div>
+                                <!-- Bin breakdown -->
+                                <div id="binBreakdown" style="display: none;">
+                                    <h6 class="mb-2 text-muted"><i class="fas fa-box-open"></i> Stock by Bin:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Bin</th>
+                                                    <th>Description</th>
+                                                    <th class="text-end">Quantity</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="binBreakdownBody">
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -391,6 +408,27 @@ $(document).ready(function() {
                 $quantityInput.attr('placeholder', `Max: ${data.quantity.toFixed(2)}`);
                 $quantityHelp.html(`Maximum available: <strong>${data.quantity.toFixed(2)} ${data.uom}</strong>`);
                 $quantityHelp.removeClass().addClass('form-text text-success');
+
+                // Show bin breakdown if available
+                if (data.bins && data.bins.length > 0) {
+                    const $binBreakdownBody = $('#binBreakdownBody');
+                    $binBreakdownBody.empty();
+
+                    data.bins.forEach(bin => {
+                        const row = `
+                            <tr>
+                                <td><strong>${bin.bin_code}</strong></td>
+                                <td>${bin.bin_description || '-'}</td>
+                                <td class="text-end"><strong>${bin.quantity.toFixed(2)} ${data.uom}</strong></td>
+                            </tr>
+                        `;
+                        $binBreakdownBody.append(row);
+                    });
+
+                    $('#binBreakdown').show();
+                } else {
+                    $('#binBreakdown').hide();
+                }
             } else {
                 // Show warning state - no stock available
                 console.log('Showing warning state - no stock');
@@ -405,6 +443,9 @@ $(document).ready(function() {
                 $quantityInput.attr('placeholder', '0.00');
                 $quantityHelp.html('<strong>No stock available</strong> at selected location');
                 $quantityHelp.removeClass().addClass('form-text text-warning');
+
+                // Hide bin breakdown
+                $('#binBreakdown').hide();
             }
         } catch (error) {
             console.error('Error checking available quantity:', error);
