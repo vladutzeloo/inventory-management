@@ -49,17 +49,12 @@ def new():
             item_type = request.form.get('item_type')
             item_id = int(request.form.get('item_id'))
             from_location_id = int(request.form.get('from_location_id'))
-            from_bin_id = request.form.get('from_bin_id')
-            from_bin_id = int(from_bin_id) if from_bin_id and from_bin_id != '' else None
             to_location_id = int(request.form.get('to_location_id'))
-            to_bin_id = request.form.get('to_bin_id')
-            to_bin_id = int(to_bin_id) if to_bin_id and to_bin_id != '' else None
             quantity = float(request.form.get('quantity'))
 
-            # Validate quantity available
+            # Validate quantity available at location level (sum of all bins)
             inventory_query = InventoryLevel.query.filter_by(
-                location_id=from_location_id,
-                bin_id=from_bin_id
+                location_id=from_location_id
             )
 
             if item_type == 'material':
@@ -67,23 +62,23 @@ def new():
             else:
                 inventory_query = inventory_query.filter_by(item_id=item_id)
 
-            inventory = inventory_query.first()
+            # Sum up quantities from all bins at this location
+            total_available = sum(inv.quantity for inv in inventory_query.all())
 
-            if not inventory or inventory.quantity < quantity:
-                available = inventory.quantity if inventory else 0
-                flash(f'Insufficient quantity. Available: {available}, Requested: {quantity}', 'danger')
+            if total_available < quantity:
+                flash(f'Insufficient quantity. Available: {total_available}, Requested: {quantity}', 'danger')
                 return redirect(url_for('transfers.new'))
 
-            # Create transfer
+            # Create transfer without bin information
             transfer = Transfer(
                 transfer_number=generate_transfer_number(),
                 transfer_date=datetime.strptime(request.form['transfer_date'], '%Y-%m-%d'),
                 material_id=item_id if item_type == 'material' else None,
                 item_id=item_id if item_type == 'item' else None,
                 from_location_id=from_location_id,
-                from_bin_id=from_bin_id,
+                from_bin_id=None,  # No bin tracking in transfers
                 to_location_id=to_location_id,
-                to_bin_id=to_bin_id,
+                to_bin_id=None,  # No bin tracking in transfers
                 quantity=quantity,
                 reason=request.form.get('reason', '').strip(),
                 internal_order_number=request.form.get('internal_order_number', '').strip(),

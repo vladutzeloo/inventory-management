@@ -229,20 +229,16 @@ def api_bins(location_id):
 @bp.route('/api/available-quantity')
 @login_required
 def api_available_quantity():
-    """API endpoint to get available quantity for item/material at location/bin"""
+    """API endpoint to get available quantity for item/material at location (sum of all bins)"""
     item_type = request.args.get('item_type')  # 'material' or 'item'
     item_id = request.args.get('item_id', type=int)
     location_id = request.args.get('location_id', type=int)
-    bin_id = request.args.get('bin_id', type=int) if request.args.get('bin_id') else None
 
     if not item_type or not item_id or not location_id:
         return jsonify({'error': 'Missing required parameters'}), 400
 
-    # Query inventory level
-    query = InventoryLevel.query.filter_by(
-        location_id=location_id,
-        bin_id=bin_id
-    )
+    # Query inventory levels at location (all bins)
+    query = InventoryLevel.query.filter_by(location_id=location_id)
 
     if item_type == 'material':
         query = query.filter_by(material_id=item_id)
@@ -251,27 +247,44 @@ def api_available_quantity():
     else:
         return jsonify({'error': 'Invalid item type'}), 400
 
-    inventory = query.first()
+    # Get all inventory records at this location and sum quantities
+    inventories = query.all()
+    total_quantity = sum(inv.quantity for inv in inventories)
 
-    if inventory and inventory.quantity > 0:
-        # Get the item/material name and UOM
+    if inventories and total_quantity > 0:
+        # Get the item/material name and UOM from first record
+        first_inv = inventories[0]
         if item_type == 'material':
-            name = inventory.material.name
-            uom = inventory.material.unit_of_measure
+            name = first_inv.material.name
+            uom = first_inv.material.unit_of_measure
         else:
-            name = inventory.item.name
-            uom = inventory.item.unit_of_measure
+            name = first_inv.item.name
+            uom = first_inv.item.unit_of_measure
 
         return jsonify({
             'available': True,
-            'quantity': inventory.quantity,
+            'quantity': total_quantity,
             'name': name,
             'uom': uom
         })
     else:
+        # Get name/uom even when no stock
+        if item_type == 'material':
+            from models import Material
+            material = Material.query.get(item_id)
+            name = material.name if material else 'Unknown'
+            uom = material.unit_of_measure if material else ''
+        else:
+            from models import Item
+            item = Item.query.get(item_id)
+            name = item.name if item else 'Unknown'
+            uom = item.unit_of_measure if item else ''
+
         return jsonify({
             'available': False,
-            'quantity': 0
+            'quantity': 0,
+            'name': name,
+            'uom': uom
         })
 
 

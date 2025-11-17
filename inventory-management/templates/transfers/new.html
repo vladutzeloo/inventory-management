@@ -73,15 +73,14 @@
                     <!-- From Location -->
                     <h5 class="text-primary mb-3"><i class="fas fa-map-marker-alt"></i> From (Source)</h5>
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label for="from_location_id" class="form-label">
                                 <i class="fas fa-warehouse"></i> From Location
                                 <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select select2 location-select"
+                            <select class="form-select select2"
                                     id="from_location_id"
                                     name="from_location_id"
-                                    data-bin-select="from_bin_id"
                                     data-placeholder="Search for location..."
                                     required>
                                 <option value="">Select From Location</option>
@@ -89,21 +88,7 @@
                                 <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="from_bin_id" class="form-label">
-                                <i class="fas fa-box-open"></i> From Bin
-                                <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select select2 bin-select"
-                                    id="from_bin_id"
-                                    name="from_bin_id"
-                                    data-placeholder="Select bin..."
-                                    required
-                                    disabled>
-                                <option value="">Select location first...</option>
-                            </select>
-                            <div class="form-text">Select specific bin within location</div>
+                            <div class="form-text">Source location for the transfer</div>
                         </div>
                     </div>
 
@@ -114,15 +99,14 @@
                     <!-- To Location -->
                     <h5 class="text-primary mb-3"><i class="fas fa-map-marker-alt"></i> To (Destination)</h5>
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label for="to_location_id" class="form-label">
                                 <i class="fas fa-warehouse"></i> To Location
                                 <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select select2 location-select"
+                            <select class="form-select select2"
                                     id="to_location_id"
                                     name="to_location_id"
-                                    data-bin-select="to_bin_id"
                                     data-placeholder="Search for location..."
                                     required>
                                 <option value="">Select To Location</option>
@@ -130,21 +114,7 @@
                                 <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="to_bin_id" class="form-label">
-                                <i class="fas fa-box-open"></i> To Bin
-                                <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select select2 bin-select"
-                                    id="to_bin_id"
-                                    name="to_bin_id"
-                                    data-placeholder="Select bin..."
-                                    required
-                                    disabled>
-                                <option value="">Select location first...</option>
-                            </select>
-                            <div class="form-text">Select specific bin within location</div>
+                            <div class="form-text">Destination location for the transfer</div>
                         </div>
                     </div>
 
@@ -154,12 +124,19 @@
                     <h5 class="text-primary mb-3"><i class="fas fa-clipboard-list"></i> Transfer Details</h5>
 
                     <!-- Available Quantity Display -->
-                    <div id="availableQuantityDisplay" class="alert alert-info mb-3" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-info-circle"></i>
-                                <strong>Available at selected location:</strong>
-                                <span id="availableQuantityText"></span>
+                    <div id="availableQuantityDisplay" class="alert alert-info mb-4" style="display: none;">
+                        <div class="row align-items-center">
+                            <div class="col-md-12">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-cubes"></i> Available Stock at Source Location
+                                </h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="badge bg-primary fs-5 me-3 px-3 py-2" id="availableQuantityBadge">0</div>
+                                    <div>
+                                        <div id="availableQuantityText" class="fw-bold"></div>
+                                        <small class="text-muted">This is the maximum quantity you can transfer</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -250,9 +227,9 @@
             <div class="card-body">
                 <ul class="mb-0">
                     <li><strong>FIFO Tracking:</strong> The system automatically tracks batches using First-In-First-Out methodology</li>
-                    <li><strong>Available Stock:</strong> Ensure sufficient stock is available at the source location before transferring</li>
+                    <li><strong>Available Stock:</strong> The system will show you the available stock at the source location once you select an item and location</li>
                     <li><strong>Location Selection:</strong> From and To locations must be different</li>
-                    <li><strong>Bins:</strong> Bins are optional but recommended for better tracking within large locations</li>
+                    <li><strong>Bin Management:</strong> Bins are managed separately in the bin management section - transfers work at location level</li>
                     <li><strong>Immediate Processing:</strong> Transfers are processed immediately and cannot be reversed (only adjusted)</li>
                 </ul>
             </div>
@@ -274,14 +251,6 @@ const items = [
     {id: {{ item.id }}, name: "{{ item.name|e }}", unit_of_measure: "{{ item.unit_of_measure|e }}"}{% if not loop.last %},{% endif %}
     {% endfor %}
 ];
-const locations = [
-    {% for location in locations %}
-    {id: {{ location.id }}, code: "{{ location.code|e }}", name: "{{ location.name|e }}"}{% if not loop.last %},{% endif %}
-    {% endfor %}
-];
-
-// Bins data cache
-const binsCache = {};
 
 // Item type change handler
 document.getElementById('item_type').addEventListener('change', function() {
@@ -309,214 +278,20 @@ document.getElementById('item_type').addEventListener('change', function() {
         itemSelect.disabled = true;
         itemSelect.innerHTML = '<option value="">First select a type...</option>';
     }
+
+    // Trigger availability check when item type changes
+    checkAvailableQuantity();
 });
 
-// Item selection change - reload bins with stock for this specific item
+// Item selection change
 document.getElementById('item_id').addEventListener('change', function() {
-    const fromLocationId = document.getElementById('from_location_id').value;
-
-    // If from location is already selected, reload bins to show stock for this item
-    if (fromLocationId) {
-        console.log('Item changed, reloading bins with stock...');
-        // Trigger location change to reload bins
-        document.getElementById('from_location_id').dispatchEvent(new Event('change'));
-    }
+    checkAvailableQuantity();
 });
 
-// Location change handler - Load bins via AJAX
-document.querySelectorAll('.location-select').forEach(locationSelect => {
-    locationSelect.addEventListener('change', async function() {
-        const locationId = this.value;
-        const binSelectId = this.getAttribute('data-bin-select');
-        const binSelect = document.getElementById(binSelectId);
-
-        console.log('Location changed:', locationId, 'for bin select:', binSelectId);
-
-        if (!locationId) {
-            // Destroy Select2 before modifying
-            if ($(binSelect).hasClass('select2-hidden-accessible')) {
-                $(binSelect).select2('destroy');
-            }
-            binSelect.innerHTML = '<option value="">Select location first...</option>';
-            binSelect.disabled = true;
-            return;
-        }
-
-        // For "from" location, load bins WITH stock quantities
-        // For "to" location, load all bins
-        const isFromLocation = binSelectId === 'from_bin_id';
-
-        // Show loading state
-        if ($(binSelect).hasClass('select2-hidden-accessible')) {
-            $(binSelect).select2('destroy');
-        }
-        binSelect.innerHTML = '<option value="">Loading bins...</option>';
-        binSelect.disabled = true;
-
-        try {
-            let bins = [];
-
-            if (isFromLocation) {
-                // Get item type and ID for from location
-                const itemType = document.getElementById('item_type').value;
-                const itemId = document.getElementById('item_id').value;
-
-                if (itemType && itemId) {
-                    // Fetch bins WITH stock for this specific item
-                    console.log(`Fetching bins with stock for ${itemType} ${itemId} at location ${locationId}`);
-                    const url = `/locations/api/bins-with-stock?item_type=${itemType}&item_id=${itemId}&location_id=${locationId}`;
-                    console.log('API URL:', url);
-
-                    const response = await fetch(url);
-                    console.log('Response status:', response.status);
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('API error response:', errorText);
-                        throw new Error(`Failed to fetch bins: ${response.status} - ${errorText}`);
-                    }
-
-                    bins = await response.json();
-                    console.log('✓ Received bins with stock from API:', bins);
-                    console.log('Number of bins:', bins.length);
-
-                    if (bins.length === 0) {
-                        alert(`No stock found for this item in location.\n\nPlease check:\n1. Item has been received to this location\n2. Bins contain stock\n3. Stock hasn't been fully consumed`);
-                    }
-
-                    populateBinsWithQuantity(binSelect, bins);
-                } else {
-                    // Item not selected yet, load all bins
-                    const cacheKey = locationId;
-                    if (!binsCache[cacheKey]) {
-                        const response = await fetch(`/locations/api/bins/${locationId}`);
-                        if (!response.ok) {
-                            throw new Error(`Failed to fetch bins: ${response.status}`);
-                        }
-                        binsCache[cacheKey] = await response.json();
-                    }
-                    populateBins(binSelect, binsCache[cacheKey]);
-                }
-            } else {
-                // To location - load all bins
-                const cacheKey = locationId;
-                if (!binsCache[cacheKey]) {
-                    console.log('Fetching all bins for to_location', locationId);
-                    const response = await fetch(`/locations/api/bins/${locationId}`);
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch bins: ${response.status}`);
-                    }
-                    binsCache[cacheKey] = await response.json();
-                }
-                bins = binsCache[cacheKey];
-                console.log('Received bins:', bins);
-                populateBins(binSelect, bins);
-            }
-
-            // Trigger availability check after bins loaded
-            if (isFromLocation) {
-                setTimeout(checkAvailableQuantity, 100);
-            }
-
-        } catch (error) {
-            console.error('Error loading bins:', error);
-            alert('Error loading bins: ' + error.message + '\nPlease check if the location has bins configured.');
-            binSelect.innerHTML = '<option value="">Error loading bins</option>';
-            binSelect.disabled = true;
-        }
-    });
+// From location change
+document.getElementById('from_location_id').addEventListener('change', function() {
+    checkAvailableQuantity();
 });
-
-function populateBins(selectElement, bins) {
-    // Destroy Select2 if it exists
-    if ($(selectElement).hasClass('select2-hidden-accessible')) {
-        $(selectElement).select2('destroy');
-    }
-
-    // Clear and populate options
-    selectElement.innerHTML = '<option value="">Select bin...</option>';
-
-    if (bins && bins.length > 0) {
-        bins.forEach(bin => {
-            const option = document.createElement('option');
-            option.value = bin.id;
-            option.textContent = bin.bin_code + (bin.description ? ' - ' + bin.description : '');
-            selectElement.appendChild(option);
-        });
-        selectElement.disabled = false;
-    } else {
-        selectElement.innerHTML = '<option value="">No bins available</option>';
-        selectElement.disabled = true;
-    }
-
-    // Reinitialize Select2
-    $(selectElement).select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        allowClear: false,
-        placeholder: 'Select bin...'
-    });
-
-    console.log('Bins populated for', selectElement.id, ':', bins.length, 'bins');
-}
-
-function populateBinsWithQuantity(selectElement, bins) {
-    console.log('populateBinsWithQuantity called with:', bins);
-
-    // Destroy Select2 if it exists
-    if ($(selectElement).hasClass('select2-hidden-accessible')) {
-        console.log('Destroying existing Select2');
-        $(selectElement).select2('destroy');
-    }
-
-    // Clear and populate options
-    selectElement.innerHTML = '';
-    selectElement.innerHTML = '<option value="">Select bin...</option>';
-
-    if (bins && bins.length > 0) {
-        console.log('Populating', bins.length, 'bins with quantities');
-        bins.forEach(bin => {
-            const option = document.createElement('option');
-            option.value = bin.id;
-            // Show bin code, description, and available quantity
-            const descText = bin.description ? ` - ${bin.description}` : '';
-            option.textContent = `${bin.bin_code}${descText} (${bin.quantity.toFixed(2)} available)`;
-            selectElement.appendChild(option);
-            console.log('Added bin option:', option.textContent);
-        });
-        selectElement.disabled = false;
-        console.log('Enabled select element');
-    } else {
-        console.log('No bins with stock found');
-        selectElement.innerHTML = '<option value="">No stock in any bin</option>';
-        selectElement.disabled = true;
-    }
-
-    // Force enable before Select2 init
-    selectElement.disabled = false;
-    selectElement.removeAttribute('disabled');
-
-    // Small delay before reinitializing Select2
-    setTimeout(() => {
-        console.log('Initializing Select2...');
-        $(selectElement).select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-            allowClear: false,
-            placeholder: 'Select bin...',
-            disabled: false
-        });
-        console.log('Select2 initialized for', selectElement.id);
-
-        // Double-check it's enabled
-        if (bins && bins.length > 0) {
-            $(selectElement).prop('disabled', false);
-            console.log('Final check - element enabled');
-        }
-    }, 100);
-
-    console.log('Bins with stock populated for', selectElement.id, ':', bins ? bins.length : 0, 'bins');
-}
 
 // Form validation
 document.getElementById('transferForm').addEventListener('submit', function(e) {
@@ -547,21 +322,11 @@ document.getElementById('transferForm').addEventListener('submit', function(e) {
     return true;
 });
 
-// Initialize bin selects with default option
-window.addEventListener('load', function() {
-    document.querySelectorAll('.bin-select').forEach(select => {
-        if (!select.value) {
-            select.innerHTML = '<option value="">No bin (location level)</option>';
-        }
-    });
-});
-
 // Check available quantity when all selections are made
 async function checkAvailableQuantity() {
     const itemType = document.getElementById('item_type').value;
     const itemId = document.getElementById('item_id').value;
     const fromLocationId = document.getElementById('from_location_id').value;
-    const fromBinId = document.getElementById('from_bin_id').value || '';
 
     // Only check if we have item type, item, and location selected
     if (!itemType || !itemId || !fromLocationId) {
@@ -570,31 +335,46 @@ async function checkAvailableQuantity() {
     }
 
     try {
-        const url = `/locations/api/available-quantity?item_type=${itemType}&item_id=${itemId}&location_id=${fromLocationId}&bin_id=${fromBinId}`;
+        // Call API without bin_id parameter (location level only)
+        const url = `/locations/api/available-quantity?item_type=${itemType}&item_id=${itemId}&location_id=${fromLocationId}`;
         const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+
         const data = await response.json();
 
         const displayDiv = document.getElementById('availableQuantityDisplay');
+        const badgeDiv = document.getElementById('availableQuantityBadge');
         const textSpan = document.getElementById('availableQuantityText');
         const quantityInput = document.getElementById('quantity');
         const quantityHelp = document.getElementById('quantityHelp');
 
         if (data.available && data.quantity > 0) {
-            displayDiv.className = 'alert alert-success mb-3';
-            textSpan.innerHTML = `<strong>${data.quantity.toFixed(2)} ${data.uom}</strong> of <em>${data.name}</em>`;
+            // Show success state with green alert
+            displayDiv.className = 'alert alert-success mb-4';
+            badgeDiv.className = 'badge bg-success fs-5 me-3 px-3 py-2';
+            badgeDiv.textContent = data.quantity.toFixed(2);
+            textSpan.innerHTML = `${data.uom} of <strong>${data.name}</strong>`;
             displayDiv.style.display = 'block';
 
             // Set max on quantity input
             quantityInput.max = data.quantity;
-            quantityHelp.innerHTML = `Max available: <strong>${data.quantity.toFixed(2)}</strong>`;
+            quantityInput.placeholder = `Max: ${data.quantity.toFixed(2)}`;
+            quantityHelp.innerHTML = `Maximum available: <strong>${data.quantity.toFixed(2)} ${data.uom}</strong>`;
             quantityHelp.className = 'form-text text-success';
         } else {
-            displayDiv.className = 'alert alert-warning mb-3';
-            textSpan.innerHTML = '<strong>No stock available</strong> at this location/bin';
+            // Show warning state - no stock available
+            displayDiv.className = 'alert alert-warning mb-4';
+            badgeDiv.className = 'badge bg-warning fs-5 me-3 px-3 py-2';
+            badgeDiv.textContent = '0';
+            textSpan.innerHTML = `<strong>${data.name}</strong>`;
             displayDiv.style.display = 'block';
 
             quantityInput.max = '';
-            quantityHelp.innerHTML = 'No stock available at selected location';
+            quantityInput.placeholder = '0.00';
+            quantityHelp.innerHTML = '<strong>No stock available</strong> at selected location';
             quantityHelp.className = 'form-text text-warning';
         }
     } catch (error) {
@@ -602,11 +382,5 @@ async function checkAvailableQuantity() {
         document.getElementById('availableQuantityDisplay').style.display = 'none';
     }
 }
-
-// Add event listeners to trigger availability check
-document.getElementById('item_type').addEventListener('change', checkAvailableQuantity);
-document.getElementById('item_id').addEventListener('change', checkAvailableQuantity);
-document.getElementById('from_location_id').addEventListener('change', checkAvailableQuantity);
-document.getElementById('from_bin_id').addEventListener('change', checkAvailableQuantity);
 </script>
 {% endblock %}
