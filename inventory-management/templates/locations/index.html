@@ -17,6 +17,48 @@
     Bins help you track exactly where inventory is stored within each location.
 </div>
 
+<!-- Search and Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('locations.index') }}" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search text-primary"></i>
+                    </span>
+                    <input type="text"
+                           class="form-control"
+                           name="search"
+                           placeholder="Search by code or name..."
+                           value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="location_type">
+                    <option value="">All Types</option>
+                    <option value="warehouse" {% if location_type == 'warehouse' %}selected{% endif %}>Warehouse</option>
+                    <option value="production" {% if location_type == 'production' %}selected{% endif %}>Production</option>
+                    <option value="shipping" {% if location_type == 'shipping' %}selected{% endif %}>Shipping</option>
+                    <option value="receiving" {% if location_type == 'receiving' %}selected{% endif %}>Receiving</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="active">
+                    <option value="">All Status</option>
+                    <option value="active" {% if active_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if active_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card shadow-sm">
     <div class="card-header bg-primary text-white">
         <h5 class="mb-0"><i class="fas fa-list"></i> All Locations</h5>
@@ -116,6 +158,47 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-light">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('locations.index', page=pagination.prev_num, search=search, location_type=location_type, active=active_filter) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('locations.index', page=page_num, search=search, location_type=location_type, active=active_filter) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('locations.index', page=pagination.next_num, search=search, location_type=location_type, active=active_filter) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} -
+                {{ min(pagination.page * pagination.per_page, pagination.total) }} of {{ pagination.total }} locations
+            </small>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Location Statistics -->

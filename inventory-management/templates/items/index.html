@@ -23,7 +23,7 @@
     <div class="card-body">
         <form method="GET" action="{{ url_for('items.index') }}" class="row g-3">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-primary text-white">
                         <i class="fas fa-search"></i>
@@ -35,7 +35,7 @@
                            placeholder="Search by name or description...">
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-2">
                 <select name="category" class="form-select">
                     <option value="">All Categories</option>
                     {% for cat in categories %}
@@ -46,9 +46,34 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">
+                <select class="form-select" name="client_id">
+                    <option value="">All Clients</option>
+                    {% for client in clients %}
+                    <option value="{{ client.id }}" {% if client_id|string == client.id|string %}selected{% endif %}>{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text"
+                       class="form-control"
+                       name="unit_of_measure"
+                       placeholder="Unit of Measure..."
+                       value="{{ unit_of_measure }}">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="active">
+                    <option value="">All Status</option>
+                    <option value="active" {% if active_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if active_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-primary">
                     <i class="fas fa-filter"></i> Filter
                 </button>
+                <a href="{{ url_for('items.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
             </div>
         </form>
     </div>
@@ -168,7 +193,7 @@
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center mb-0">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('items.index', page=pagination.prev_num, search=search, category=category) }}">
+                    <a class="page-link" href="{{ url_for('items.index', page=pagination.prev_num, search=search, category=category, client_id=client_id, unit_of_measure=unit_of_measure, active=active_filter) }}">
                         <i class="fas fa-chevron-left"></i> Previous
                     </a>
                 </li>
@@ -176,7 +201,7 @@
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                     {% if page_num %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('items.index', page=page_num, search=search, category=category) }}">
+                            <a class="page-link" href="{{ url_for('items.index', page=page_num, search=search, category=category, client_id=client_id, unit_of_measure=unit_of_measure, active=active_filter) }}">
                                 {{ page_num }}
                             </a>
                         </li>
@@ -188,7 +213,7 @@
                 {% endfor %}
 
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('items.index', page=pagination.next_num, search=search, category=category) }}">
+                    <a class="page-link" href="{{ url_for('items.index', page=pagination.next_num, search=search, category=category, client_id=client_id, unit_of_measure=unit_of_measure, active=active_filter) }}">
                         Next <i class="fas fa-chevron-right"></i>
                     </a>
                 </li>

@@ -10,30 +10,118 @@
     </a>
 </div>
 
-<!-- Search Bar -->
-<div class="card mb-4">
-    <div class="card-body">
+<!-- Search & Filter Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h6 class="mb-0">
+            <i class="fas fa-filter"></i> Search & Filters
+            <button class="btn btn-sm btn-link float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                <i class="fas fa-chevron-down"></i> Toggle Filters
+            </button>
+        </h6>
+    </div>
+    <div class="card-body collapse show" id="filterCollapse">
         <form method="GET" action="{{ url_for('transfers.index') }}" class="row g-3">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <div class="col-md-9">
-                <div class="input-group">
-                    <span class="input-group-text bg-white">
-                        <i class="fas fa-search text-blue"></i>
-                    </span>
-                    <input type="text"
-                           class="form-control"
-                           name="search"
-                           placeholder="Search transfers by transfer number..."
-                           value="{{ search }}">
-                </div>
+            <!-- Date Range -->
+            <div class="col-md-3">
+                <label for="date_from" class="form-label small fw-bold">
+                    <i class="fas fa-calendar-alt"></i> From Date
+                </label>
+                <input type="date"
+                       class="form-control"
+                       id="date_from"
+                       name="date_from"
+                       value="{{ date_from }}">
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-filter"></i> Search
-                </button>
-                <a href="{{ url_for('transfers.index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-times"></i> Clear
-                </a>
+                <label for="date_to" class="form-label small fw-bold">
+                    <i class="fas fa-calendar-check"></i> To Date
+                </label>
+                <input type="date"
+                       class="form-control"
+                       id="date_to"
+                       name="date_to"
+                       value="{{ date_to }}">
+            </div>
+
+            <!-- From Location Filter -->
+            <div class="col-md-3">
+                <label for="from_location_id" class="form-label small fw-bold">
+                    <i class="fas fa-warehouse"></i> From Location
+                </label>
+                <select class="form-select" id="from_location_id" name="from_location_id">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}" {% if from_location_id == location.id|string %}selected{% endif %}>
+                        {{ location.code }} - {{ location.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- To Location Filter -->
+            <div class="col-md-3">
+                <label for="to_location_id" class="form-label small fw-bold">
+                    <i class="fas fa-warehouse"></i> To Location
+                </label>
+                <select class="form-select" id="to_location_id" name="to_location_id">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}" {% if to_location_id == location.id|string %}selected{% endif %}>
+                        {{ location.code }} - {{ location.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Material/Item Filter -->
+            <div class="col-md-3">
+                <label for="material_item_search" class="form-label small fw-bold">
+                    <i class="fas fa-cube"></i> Material/Item
+                </label>
+                <input type="text"
+                       class="form-control"
+                       id="material_item_search"
+                       name="material_item_search"
+                       value="{{ material_item_search }}"
+                       placeholder="Search material or item...">
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-md-3">
+                <label for="status" class="form-label small fw-bold">
+                    <i class="fas fa-info-circle"></i> Status
+                </label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+                </select>
+            </div>
+
+            <!-- Reason Filter -->
+            <div class="col-md-6">
+                <label for="reason" class="form-label small fw-bold">
+                    <i class="fas fa-comment"></i> Reason
+                </label>
+                <input type="text"
+                       class="form-control"
+                       id="reason"
+                       name="reason"
+                       value="{{ reason }}"
+                       placeholder="Search by reason...">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <a href="{{ url_for('transfers.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear All
+                    </a>
+                </div>
             </div>
         </form>
     </div>
@@ -165,7 +253,7 @@
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center mb-0">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('transfers.index', page=pagination.prev_num, search=search) }}">
+                    <a class="page-link" href="{{ url_for('transfers.index', page=pagination.prev_num, date_from=date_from, date_to=date_to, from_location_id=from_location_id, to_location_id=to_location_id, material_item_search=material_item_search, status=status, reason=reason) }}">
                         <i class="fas fa-chevron-left"></i> Previous
                     </a>
                 </li>
@@ -173,7 +261,7 @@
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                     {% if page_num %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('transfers.index', page=page_num, search=search) }}">
+                            <a class="page-link" href="{{ url_for('transfers.index', page=page_num, date_from=date_from, date_to=date_to, from_location_id=from_location_id, to_location_id=to_location_id, material_item_search=material_item_search, status=status, reason=reason) }}">
                                 {{ page_num }}
                             </a>
                         </li>
@@ -185,7 +273,7 @@
                 {% endfor %}
 
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('transfers.index', page=pagination.next_num, search=search) }}">
+                    <a class="page-link" href="{{ url_for('transfers.index', page=pagination.next_num, date_from=date_from, date_to=date_to, from_location_id=from_location_id, to_location_id=to_location_id, material_item_search=material_item_search, status=status, reason=reason) }}">
                         Next <i class="fas fa-chevron-right"></i>
                     </a>
                 </li>

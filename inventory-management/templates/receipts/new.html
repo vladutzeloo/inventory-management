@@ -151,7 +151,7 @@
                     <li><strong>Supplier Batch:</strong> Batch number from supplier for traceability</li>
                     <li><strong>Location:</strong> Required - Where the goods will be stored (searchable dropdown)</li>
                     <li><strong>Bin:</strong> <span class="text-danger">Required</span> - Specific bin within the location. First select a location, then bins will load automatically.</li>
-                    <li><strong>Cost per Unit:</strong> Unit cost for FIFO batch costing</li>
+                    <li><strong>Cost per Unit:</strong> Optional - Unit cost for FIFO batch costing (defaults to 0 if not provided)</li>
                     <li><strong>Partial Receipts:</strong> You can receive items in multiple receipts using the same PO Number to track against the order</li>
                 </ul>
             </div>
@@ -293,7 +293,7 @@ $(document).ready(function() {
                     <!-- Cost per Unit -->
                     <div class="col-md-2 mb-3">
                         <label class="form-label">
-                            <i class="fas fa-euro-sign text-primary"></i> Cost/Unit <span class="text-danger">*</span>
+                            <i class="fas fa-euro-sign text-primary"></i> Cost/Unit
                         </label>
                         <input type="number"
                                class="form-control cost-input"
@@ -302,7 +302,6 @@ $(document).ready(function() {
                                step="0.01"
                                min="0"
                                value="0"
-                               required
                                onchange="calculateTotal()">
                     </div>
 

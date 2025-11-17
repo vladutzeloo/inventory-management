@@ -19,6 +19,9 @@ def index():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
     category = request.args.get('category', '', type=str)
+    provider_id = request.args.get('provider_id', '', type=str)
+    unit_of_measure = request.args.get('unit_of_measure', '', type=str)
+    active_filter = request.args.get('active', '', type=str)
 
     query = Material.query
 
@@ -35,12 +38,30 @@ def index():
     if category:
         query = query.filter(Material.category == category)
 
+    # Provider filter
+    if provider_id:
+        query = query.filter(Material.provider_id == int(provider_id))
+
+    # Unit of Measure filter
+    if unit_of_measure:
+        query = query.filter(Material.unit_of_measure.ilike(f'%{unit_of_measure}%'))
+
+    # Active/Inactive filter
+    if active_filter == 'active':
+        query = query.filter(Material.active == True)
+    elif active_filter == 'inactive':
+        query = query.filter(Material.active == False)
+
     # Get all categories for filter dropdown
     categories = db.session.query(Material.category).filter(
         Material.category.isnot(None),
         Material.category != ''
     ).distinct().order_by(Material.category).all()
     categories = [c[0] for c in categories]
+
+    # Get all active providers for filter dropdown
+    from models import Provider
+    providers = Provider.query.filter_by(active=True).order_by(Provider.name).all()
 
     # Pagination
     pagination = query.order_by(Material.name).paginate(
@@ -61,7 +82,11 @@ def index():
                           pagination=pagination,
                           search=search,
                           category=category,
-                          categories=categories)
+                          categories=categories,
+                          provider_id=provider_id,
+                          providers=providers,
+                          unit_of_measure=unit_of_measure,
+                          active_filter=active_filter)
 
 
 @bp.route('/new', methods=['GET', 'POST'])

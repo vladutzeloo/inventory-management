@@ -18,19 +18,18 @@
     Easily move items between bins or assign items to specific bins. Select a location below to see all inventory, then use the dropdown to assign items to bins.
 </div>
 
-<!-- Location Filter -->
+<!-- Location and Search Filter -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('bins.index') }}" class="row g-3">
-            <div class="col-md-10">
+            <div class="col-md-5">
                 <label for="location_id" class="form-label">
-                    <i class="fas fa-filter text-primary"></i> Filter by Location
+                    <i class="fas fa-warehouse text-primary"></i> Filter by Location
                 </label>
                 <select class="form-select select2"
                         id="location_id"
                         name="location_id"
-                        data-placeholder="Select a location to view inventory..."
-                        onchange="this.form.submit()">
+                        data-placeholder="Select a location to view inventory...">
                     <option value="">All Locations</option>
                     {% for location in locations %}
                     <option value="{{ location.id }}" {% if location.id == selected_location_id %}selected{% endif %}>
@@ -39,10 +38,31 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-md-4">
+                <label for="search" class="form-label">
+                    <i class="fas fa-search text-primary"></i> Search by Bin Code
+                </label>
+                <input type="text"
+                       class="form-control"
+                       id="search"
+                       name="search"
+                       placeholder="Search bin code..."
+                       value="{{ search }}">
+            </div>
             <div class="col-md-2">
+                <label for="active" class="form-label">
+                    <i class="fas fa-filter text-primary"></i> Bin Status
+                </label>
+                <select class="form-select" id="active" name="active">
+                    <option value="">All Status</option>
+                    <option value="active" {% if active_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if active_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-1">
                 <label class="form-label">&nbsp;</label>
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-search"></i> Filter
+                    <i class="fas fa-filter"></i>
                 </button>
             </div>
         </form>
@@ -123,6 +143,8 @@
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <input type="hidden" name="inventory_id" value="{{ inv.id }}"/>
                                     <input type="hidden" name="location_id" value="{{ selected_location_id or '' }}"/>
+                                    <input type="hidden" name="search" value="{{ search }}"/>
+                                    <input type="hidden" name="active" value="{{ active_filter }}"/>
 
                                     <select class="form-select form-select-sm select2-bin"
                                             name="new_bin_id"
@@ -165,7 +187,47 @@
             </table>
         </div>
     </div>
-    {% if inventory_items %}
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-light">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('bins.index', page=pagination.prev_num, location_id=selected_location_id, search=search, active=active_filter) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('bins.index', page=page_num, location_id=selected_location_id, search=search, active=active_filter) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('bins.index', page=pagination.next_num, location_id=selected_location_id, search=search, active=active_filter) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} -
+                {{ min(pagination.page * pagination.per_page, pagination.total) }} of {{ pagination.total }} items
+            </small>
+        </div>
+    </div>
+    {% elif inventory_items %}
     <div class="card-footer bg-light">
         <div class="row">
             <div class="col-md-6">
