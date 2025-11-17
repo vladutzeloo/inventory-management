@@ -46,6 +46,8 @@
                             <li><a class="dropdown-item" href="{{ url_for('transfers.index') }}"><i class="fas fa-exchange-alt"></i> Transfers</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('adjustments.index') }}"><i class="fas fa-edit"></i> Adjustments</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('scraps.index') }}"><i class="fas fa-trash"></i> Scrap</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('imports.index') }}"><i class="fas fa-file-excel"></i> Excel Import</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -57,6 +59,16 @@
                             <li><a class="dropdown-item" href="{{ url_for('reports.inventory_valuation') }}">Inventory Valuation</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('reports.low_stock_alerts') }}">Low Stock Alerts</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('reports.transaction_history') }}">Transaction History</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="organizationDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-building"></i> Organization
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('organization.categories') }}"><i class="fas fa-tags"></i> Categories</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('organization.clients') }}"><i class="fas fa-users"></i> Clients</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('organization.providers') }}"><i class="fas fa-truck"></i> Providers</a></li>
                         </ul>
                     </li>
                 </ul>
