@@ -240,147 +240,175 @@
 
 {% block scripts %}
 <script>
-// Store all materials and items data
-const materials = [
-    {% for material in materials %}
-    {id: {{ material.id }}, name: "{{ material.name|e }}", unit_of_measure: "{{ material.unit_of_measure|e }}"}{% if not loop.last %},{% endif %}
-    {% endfor %}
-];
-const items = [
-    {% for item in items %}
-    {id: {{ item.id }}, name: "{{ item.name|e }}", unit_of_measure: "{{ item.unit_of_measure|e }}"}{% if not loop.last %},{% endif %}
-    {% endfor %}
-];
+$(document).ready(function() {
+    // Store all materials and items data
+    const materials = [
+        {% for material in materials %}
+        {id: {{ material.id }}, name: "{{ material.name|e }}", unit_of_measure: "{{ material.unit_of_measure|e }}"}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const items = [
+        {% for item in items %}
+        {id: {{ item.id }}, name: "{{ item.name|e }}", unit_of_measure: "{{ item.unit_of_measure|e }}"}{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-// Item type change handler
-document.getElementById('item_type').addEventListener('change', function() {
-    const itemSelect = document.getElementById('item_id');
-    const itemType = this.value;
+    // Item type change handler
+    $('#item_type').on('change', function() {
+        const $itemSelect = $('#item_id');
+        const itemType = this.value;
 
-    itemSelect.innerHTML = '<option value="">Select...</option>';
-    itemSelect.disabled = false;
+        console.log('Item type changed to:', itemType);
 
-    if (itemType === 'material') {
-        materials.forEach(material => {
-            const option = document.createElement('option');
-            option.value = material.id;
-            option.textContent = `${material.name} (${material.unit_of_measure})`;
-            itemSelect.appendChild(option);
-        });
-    } else if (itemType === 'item') {
-        items.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.id;
-            option.textContent = `${item.name} (${item.unit_of_measure})`;
-            itemSelect.appendChild(option);
-        });
-    } else {
-        itemSelect.disabled = true;
-        itemSelect.innerHTML = '<option value="">First select a type...</option>';
-    }
-
-    // Trigger availability check when item type changes
-    checkAvailableQuantity();
-});
-
-// Item selection change
-document.getElementById('item_id').addEventListener('change', function() {
-    checkAvailableQuantity();
-});
-
-// From location change
-document.getElementById('from_location_id').addEventListener('change', function() {
-    checkAvailableQuantity();
-});
-
-// Form validation
-document.getElementById('transferForm').addEventListener('submit', function(e) {
-    const fromLocationId = document.getElementById('from_location_id').value;
-    const toLocationId = document.getElementById('to_location_id').value;
-    const quantity = parseFloat(document.getElementById('quantity').value);
-
-    // Check if from and to locations are the same
-    if (fromLocationId === toLocationId) {
-        e.preventDefault();
-        alert('From and To locations must be different.');
-        return false;
-    }
-
-    // Validate quantity
-    if (!quantity || quantity <= 0) {
-        e.preventDefault();
-        alert('Please enter a valid quantity greater than 0.');
-        document.getElementById('quantity').focus();
-        return false;
-    }
-
-    // Show loading state
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-    return true;
-});
-
-// Check available quantity when all selections are made
-async function checkAvailableQuantity() {
-    const itemType = document.getElementById('item_type').value;
-    const itemId = document.getElementById('item_id').value;
-    const fromLocationId = document.getElementById('from_location_id').value;
-
-    // Only check if we have item type, item, and location selected
-    if (!itemType || !itemId || !fromLocationId) {
-        document.getElementById('availableQuantityDisplay').style.display = 'none';
-        return;
-    }
-
-    try {
-        // Call API without bin_id parameter (location level only)
-        const url = `/locations/api/available-quantity?item_type=${itemType}&item_id=${itemId}&location_id=${fromLocationId}`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
+        // Destroy Select2 before modifying
+        if ($itemSelect.hasClass('select2-hidden-accessible')) {
+            $itemSelect.select2('destroy');
         }
 
-        const data = await response.json();
+        const itemSelect = document.getElementById('item_id');
+        itemSelect.innerHTML = '<option value="">Select...</option>';
+        itemSelect.disabled = false;
 
-        const displayDiv = document.getElementById('availableQuantityDisplay');
-        const badgeDiv = document.getElementById('availableQuantityBadge');
-        const textSpan = document.getElementById('availableQuantityText');
-        const quantityInput = document.getElementById('quantity');
-        const quantityHelp = document.getElementById('quantityHelp');
-
-        if (data.available && data.quantity > 0) {
-            // Show success state with green alert
-            displayDiv.className = 'alert alert-success mb-4';
-            badgeDiv.className = 'badge bg-success fs-5 me-3 px-3 py-2';
-            badgeDiv.textContent = data.quantity.toFixed(2);
-            textSpan.innerHTML = `${data.uom} of <strong>${data.name}</strong>`;
-            displayDiv.style.display = 'block';
-
-            // Set max on quantity input
-            quantityInput.max = data.quantity;
-            quantityInput.placeholder = `Max: ${data.quantity.toFixed(2)}`;
-            quantityHelp.innerHTML = `Maximum available: <strong>${data.quantity.toFixed(2)} ${data.uom}</strong>`;
-            quantityHelp.className = 'form-text text-success';
+        if (itemType === 'material') {
+            materials.forEach(material => {
+                const option = document.createElement('option');
+                option.value = material.id;
+                option.textContent = `${material.name} (${material.unit_of_measure})`;
+                itemSelect.appendChild(option);
+            });
+        } else if (itemType === 'item') {
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.name} (${item.unit_of_measure})`;
+                itemSelect.appendChild(option);
+            });
         } else {
-            // Show warning state - no stock available
-            displayDiv.className = 'alert alert-warning mb-4';
-            badgeDiv.className = 'badge bg-warning fs-5 me-3 px-3 py-2';
-            badgeDiv.textContent = '0';
-            textSpan.innerHTML = `<strong>${data.name}</strong>`;
-            displayDiv.style.display = 'block';
-
-            quantityInput.max = '';
-            quantityInput.placeholder = '0.00';
-            quantityHelp.innerHTML = '<strong>No stock available</strong> at selected location';
-            quantityHelp.className = 'form-text text-warning';
+            itemSelect.disabled = true;
+            itemSelect.innerHTML = '<option value="">First select a type...</option>';
         }
-    } catch (error) {
-        console.error('Error checking available quantity:', error);
-        document.getElementById('availableQuantityDisplay').style.display = 'none';
-    }
-}
+
+        // Reinitialize Select2
+        $itemSelect.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Search for item or material...'
+        });
+
+        // Trigger availability check when item type changes
+        checkAvailableQuantity();
+    });
+
+    // Item selection change - use jQuery for Select2 compatibility
+    $('#item_id').on('change', function() {
+        console.log('Item changed to:', $(this).val());
+        checkAvailableQuantity();
+    });
+
+    // From location change - use jQuery for Select2 compatibility
+    $('#from_location_id').on('change', function() {
+        console.log('From location changed to:', $(this).val());
+        checkAvailableQuantity();
+    });
+
+    // Form validation
+    $('#transferForm').on('submit', function(e) {
+        const fromLocationId = $('#from_location_id').val();
+        const toLocationId = $('#to_location_id').val();
+        const quantity = parseFloat($('#quantity').val());
+
+        // Check if from and to locations are the same
+        if (fromLocationId === toLocationId) {
+            e.preventDefault();
+            alert('From and To locations must be different.');
+            return false;
+        }
+
+        // Validate quantity
+        if (!quantity || quantity <= 0) {
+            e.preventDefault();
+            alert('Please enter a valid quantity greater than 0.');
+            $('#quantity').focus();
+            return false;
+        }
+
+        // Show loading state
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        return true;
+    });
+
+    // Check available quantity function
+    window.checkAvailableQuantity = async function() {
+        const itemType = $('#item_type').val();
+        const itemId = $('#item_id').val();
+        const fromLocationId = $('#from_location_id').val();
+
+        console.log('checkAvailableQuantity called:', { itemType, itemId, fromLocationId });
+
+        // Only check if we have item type, item, and location selected
+        if (!itemType || !itemId || !fromLocationId) {
+            console.log('Missing required fields, hiding display');
+            $('#availableQuantityDisplay').hide();
+            return;
+        }
+
+        try {
+            // Call API without bin_id parameter (location level only)
+            const url = `/locations/api/available-quantity?item_type=${itemType}&item_id=${itemId}&location_id=${fromLocationId}`;
+            console.log('Fetching quantity from:', url);
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API error:', response.status, errorText);
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received data:', data);
+
+            const $displayDiv = $('#availableQuantityDisplay');
+            const $badgeDiv = $('#availableQuantityBadge');
+            const $textSpan = $('#availableQuantityText');
+            const $quantityInput = $('#quantity');
+            const $quantityHelp = $('#quantityHelp');
+
+            if (data.available && data.quantity > 0) {
+                // Show success state with green alert
+                console.log('Showing success state with quantity:', data.quantity);
+                $displayDiv.removeClass().addClass('alert alert-success mb-4');
+                $badgeDiv.removeClass().addClass('badge bg-success fs-5 me-3 px-3 py-2');
+                $badgeDiv.text(data.quantity.toFixed(2));
+                $textSpan.html(`${data.uom} of <strong>${data.name}</strong>`);
+                $displayDiv.show();
+
+                // Set max on quantity input
+                $quantityInput.attr('max', data.quantity);
+                $quantityInput.attr('placeholder', `Max: ${data.quantity.toFixed(2)}`);
+                $quantityHelp.html(`Maximum available: <strong>${data.quantity.toFixed(2)} ${data.uom}</strong>`);
+                $quantityHelp.removeClass().addClass('form-text text-success');
+            } else {
+                // Show warning state - no stock available
+                console.log('Showing warning state - no stock');
+                $displayDiv.removeClass().addClass('alert alert-warning mb-4');
+                $badgeDiv.removeClass().addClass('badge bg-warning fs-5 me-3 px-3 py-2');
+                $badgeDiv.text('0');
+                $textSpan.html(`<strong>${data.name}</strong>`);
+                $displayDiv.show();
+
+                $quantityInput.removeAttr('max');
+                $quantityInput.attr('placeholder', '0.00');
+                $quantityHelp.html('<strong>No stock available</strong> at selected location');
+                $quantityHelp.removeClass().addClass('form-text text-warning');
+            }
+        } catch (error) {
+            console.error('Error checking available quantity:', error);
+            $('#availableQuantityDisplay').hide();
+        }
+    };
+});
 </script>
 {% endblock %}
