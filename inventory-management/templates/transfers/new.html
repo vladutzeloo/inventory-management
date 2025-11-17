@@ -131,7 +131,7 @@
                                     <i class="fas fa-cubes"></i> Available Stock at Source Location
                                 </h6>
                                 <div class="d-flex align-items-center">
-                                    <div class="badge bg-primary fs-5 me-3 px-3 py-2" id="availableQuantityBadge">0</div>
+                                    <div class="badge bg-primary text-white fs-5 me-3 px-3 py-2" id="availableQuantityBadge">0</div>
                                     <div>
                                         <div id="availableQuantityText" class="fw-bold"></div>
                                         <small class="text-muted">This is the maximum quantity you can transfer</small>
@@ -380,7 +380,7 @@ $(document).ready(function() {
                 // Show success state with green alert
                 console.log('Showing success state with quantity:', data.quantity);
                 $displayDiv.removeClass().addClass('alert alert-success mb-4');
-                $badgeDiv.removeClass().addClass('badge bg-success fs-5 me-3 px-3 py-2');
+                $badgeDiv.removeClass().addClass('badge bg-success text-white fs-5 me-3 px-3 py-2');
                 $badgeDiv.text(data.quantity.toFixed(2));
                 $textSpan.html(`${data.uom} of <strong>${data.name}</strong>`);
                 $displayDiv.show();
@@ -394,7 +394,7 @@ $(document).ready(function() {
                 // Show warning state - no stock available
                 console.log('Showing warning state - no stock');
                 $displayDiv.removeClass().addClass('alert alert-warning mb-4');
-                $badgeDiv.removeClass().addClass('badge bg-warning fs-5 me-3 px-3 py-2');
+                $badgeDiv.removeClass().addClass('badge bg-warning text-dark fs-5 me-3 px-3 py-2');
                 $badgeDiv.text('0');
                 $textSpan.html(`<strong>${data.name}</strong>`);
                 $displayDiv.show();
