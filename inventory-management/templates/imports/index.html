@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Excel Import - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <h2 class="mb-4"><i class="fas fa-file-excel"></i> Excel Stock Import</h2>
+
+        <div class="card shadow-blue mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-upload"></i> Upload Excel File</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('imports.upload') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select Excel File (.xlsx or .xls)</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Import
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> Excel File Format</h6>
+            </div>
+            <div class="card-body">
+                <p>Your Excel file should have the following columns (in order):</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Column</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                                <th>Required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>A: Type</strong></td>
+                                <td>material or item</td>
+                                <td>material</td>
+                                <td><span class="badge bg-danger">Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>B: Name</strong></td>
+                                <td>Material/Item name</td>
+                                <td>Steel Plate 5mm</td>
+                                <td><span class="badge bg-danger">Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>C: Category</strong></td>
+                                <td>Category name</td>
+                                <td>Metals</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td><strong>D: Provider/Client</strong></td>
+                                <td>Provider (materials) or Client (items)</td>
+                                <td>ABC Suppliers</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td><strong>E: Location</strong></td>
+                                <td>Location code (must exist)</td>
+                                <td>WH-01</td>
+                                <td><span class="badge bg-danger">Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>F: Bin</strong></td>
+                                <td>Bin code (auto-created if doesn't exist)</td>
+                                <td>A-01</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td><strong>G: Quantity</strong></td>
+                                <td>Stock quantity</td>
+                                <td>150.5</td>
+                                <td><span class="badge bg-danger">Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>H: UOM</strong></td>
+                                <td>Unit of measure</td>
+                                <td>KG</td>
+                                <td>No (defaults to PCS)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>I: Cost</strong></td>
+                                <td>Cost per unit</td>
+                                <td>25.50</td>
+                                <td>No (defaults to 0)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-success mt-3">
+                    <h6><i class="fas fa-magic"></i> Auto-Creation Features:</h6>
+                    <ul class="mb-0">
+                        <li>Materials/Items will be created if they don't exist</li>
+                        <li>Categories will be auto-created with the correct type</li>
+                        <li>Providers/Clients will be auto-created</li>
+                        <li>Bins will be auto-created in the specified location</li>
+                        <li>Stock will be added to existing inventory levels</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-warning mt-3">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Important Notes:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Locations must exist</strong> before import - create them first!</li>
+                        <li>Row 1 should be headers (will be skipped)</li>
+                        <li>Empty rows will be skipped</li>
+                        <li>Errors will be shown after import completes</li>
+                    </ul>
+                </div>
+
+                <h6 class="mt-4">Sample Excel File:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Type</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Provider/Client</th>
+                                <th>Location</th>
+                                <th>Bin</th>
+                                <th>Quantity</th>
+                                <th>UOM</th>
+                                <th>Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>material</td>
+                                <td>Steel Plate 5mm</td>
+                                <td>Metals</td>
+                                <td>ABC Steel Co</td>
+                                <td>WH-01</td>
+                                <td>A-01</td>
+                                <td>150</td>
+                                <td>KG</td>
+                                <td>25.50</td>
+                            </tr>
+                            <tr>
+                                <td>material</td>
+                                <td>Copper Wire 2.5mm</td>
+                                <td>Metals</td>
+                                <td>XYZ Suppliers</td>
+                                <td>WH-01</td>
+                                <td>B-03</td>
+                                <td>500</td>
+                                <td>M</td>
+                                <td>2.30</td>
+                            </tr>
+                            <tr>
+                                <td>item</td>
+                                <td>Widget A1000</td>
+                                <td>Electronics</td>
+                                <td>ClientCo Inc</td>
+                                <td>WH-02</td>
+                                <td>C-05</td>
+                                <td>100</td>
+                                <td>PCS</td>
+                                <td>150.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
