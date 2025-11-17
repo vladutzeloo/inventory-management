@@ -23,6 +23,7 @@
                                 <th>Contact</th>
                                 <th>Email</th>
                                 <th>Phone</th>
+                                <th>Usage</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -36,6 +37,14 @@
                                 <td>{{ client.email or '-' }}</td>
                                 <td>{{ client.phone or '-' }}</td>
                                 <td>
+                                    {% set item_count = client.items|length %}
+                                    {% if item_count > 0 %}
+                                    <span class="badge bg-info"><i class="fas fa-box"></i> {{ item_count }} item(s)</span>
+                                    {% else %}
+                                    <span class="text-muted">Not in use</span>
+                                    {% endif %}
+                                </td>
+                                <td>
                                     {% if client.active %}
                                     <span class="badge bg-success">Active</span>
                                     {% else %}
@@ -43,14 +52,19 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('organization.edit_client', id=client.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('organization.edit_client', id=client.id) }}" class="btn btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" onclick="confirmDelete('{{ client.name }}', {{ client.id }}, {{ item_count }})" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="7" class="text-center text-muted">No clients found. Click "New Client" to create one.</td>
+                                <td colspan="8" class="text-center text-muted">No clients found. Click "New Client" to create one.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -60,4 +74,29 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Form -->
+<form id="deleteForm" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(clientName, clientId, usageCount) {
+    let message = `Are you sure you want to delete client "${clientName}"?`;
+    if (usageCount > 0) {
+        message += `\n\nWARNING: This client is currently linked to ${usageCount} item(s). You must unlink them first.`;
+        alert(message);
+        return;
+    }
+    message += '\n\nThis action cannot be undone.';
+
+    if (confirm(message)) {
+        const form = document.getElementById('deleteForm');
+        form.action = "{{ url_for('organization.delete_client', id=0) }}".replace('0', clientId);
+        form.submit();
+    }
+}
+</script>
 {% endblock %}

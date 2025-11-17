@@ -42,23 +42,38 @@
 
                         <!-- Category -->
                         <div class="col-md-6 mb-3">
-                            <label for="category" class="form-label">
+                            <label for="category_id" class="form-label">
                                 <i class="fas fa-folder"></i> Category
                             </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="category"
-                                   name="category"
-                                   list="categoryList"
-                                   placeholder="Enter or select category"
-                                   value="{{ material.category or '' }}"
-                                   maxlength="50">
-                            <datalist id="categoryList">
+                            <select class="form-select select2"
+                                    id="category_id"
+                                    name="category_id"
+                                    data-placeholder="Select a category">
+                                <option value="">-- Select Category --</option>
                                 {% for cat in categories %}
-                                <option value="{{ cat }}">
+                                <option value="{{ cat.id }}" {% if material.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                                 {% endfor %}
-                            </datalist>
-                            <div class="form-text">Group materials by category</div>
+                            </select>
+                            <div class="form-text">Group materials by category. <a href="{{ url_for('organization.categories') }}" target="_blank">Manage categories</a></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Provider -->
+                        <div class="col-md-12 mb-3">
+                            <label for="provider_id" class="form-label">
+                                <i class="fas fa-truck"></i> Provider/Supplier
+                            </label>
+                            <select class="form-select select2"
+                                    id="provider_id"
+                                    name="provider_id"
+                                    data-placeholder="Select a provider">
+                                <option value="">-- Select Provider --</option>
+                                {% for provider in providers %}
+                                <option value="{{ provider.id }}" {% if material.provider_id == provider.id %}selected{% endif %}>{{ provider.name }} ({{ provider.code }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optional: Select the main supplier for this material. <a href="{{ url_for('organization.providers') }}" target="_blank">Manage providers</a></div>
                         </div>
                     </div>
 

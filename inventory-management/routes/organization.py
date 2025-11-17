@@ -64,6 +64,31 @@ def edit_category(id):
     return render_template('organization/category_form.html', category=category)
 
 
+@bp.route('/categories/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_category(id):
+    """Delete category with protection"""
+    category = Category.query.get_or_404(id)
+
+    # Check if category is in use
+    materials_count = len(category.materials)
+    items_count = len(category.items)
+
+    if materials_count > 0 or items_count > 0:
+        flash(f'Cannot delete category "{category.name}" - it is linked to {materials_count} material(s) and {items_count} item(s). Please unlink them first.', 'danger')
+        return redirect(url_for('organization.categories'))
+
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        flash(f'Category "{category.name}" deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting category: {str(e)}', 'danger')
+
+    return redirect(url_for('organization.categories'))
+
+
 # ==================== CLIENTS ====================
 
 @bp.route('/clients')
@@ -126,6 +151,30 @@ def edit_client(id):
     return render_template('organization/client_form.html', client=client)
 
 
+@bp.route('/clients/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_client(id):
+    """Delete client with protection"""
+    client = Client.query.get_or_404(id)
+
+    # Check if client is in use
+    items_count = len(client.items)
+
+    if items_count > 0:
+        flash(f'Cannot delete client "{client.name}" - it is linked to {items_count} item(s). Please unlink them first.', 'danger')
+        return redirect(url_for('organization.clients'))
+
+    try:
+        db.session.delete(client)
+        db.session.commit()
+        flash(f'Client "{client.name}" deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting client: {str(e)}', 'danger')
+
+    return redirect(url_for('organization.clients'))
+
+
 # ==================== PROVIDERS ====================
 
 @bp.route('/providers')
@@ -186,3 +235,27 @@ def edit_provider(id):
             flash(f'Error updating provider: {str(e)}', 'danger')
 
     return render_template('organization/provider_form.html', provider=provider)
+
+
+@bp.route('/providers/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_provider(id):
+    """Delete provider with protection"""
+    provider = Provider.query.get_or_404(id)
+
+    # Check if provider is in use
+    materials_count = len(provider.materials)
+
+    if materials_count > 0:
+        flash(f'Cannot delete provider "{provider.name}" - it is linked to {materials_count} material(s). Please unlink them first.', 'danger')
+        return redirect(url_for('organization.providers'))
+
+    try:
+        db.session.delete(provider)
+        db.session.commit()
+        flash(f'Provider "{provider.name}" deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting provider: {str(e)}', 'danger')
+
+    return redirect(url_for('organization.providers'))
