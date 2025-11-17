@@ -93,7 +93,7 @@
                             <select class="form-select" id="location_id" name="location_id" required>
                                 <option value="">Choose location...</option>
                                 {% for location in locations %}
-                                <option value="{{ location.id }}" data-bins='[{% for bin in location.bins %}{"id":{{ bin.id }},"bin_code":"{{ bin.bin_code|e }}"}{% if not loop.last %},{% endif %}{% endfor %}]'>
+                                <option value="{{ location.id }}" data-bins='[{% for bin in location.bins %}{"id":{{ bin.id }},"bin_code":"{{ bin.bin_code|e }}","description":"{{ bin.description|e if bin.description else '' }}"}{% if not loop.last %},{% endif %}{% endfor %}]'>
                                     {{ location.code }} - {{ location.name }}
                                 </option>
                                 {% endfor %}
@@ -232,7 +232,7 @@ $(document).ready(function() {
                 binSelect.append(
                     $('<option></option>')
                         .attr('value', bin.id)
-                        .text(bin.code + (bin.name ? ' - ' + bin.name : ''))
+                        .text(bin.bin_code + (bin.description ? ' - ' + bin.description : ''))
                 );
             });
         }
