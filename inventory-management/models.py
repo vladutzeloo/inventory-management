@@ -17,7 +17,8 @@ class Material(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True, nullable=False, index=True)
     description = db.Column(db.Text)
-    category = db.Column(db.String(100))  # Metals, Plastics, Electronics, etc.
+    category = db.Column(db.String(100))  # Legacy field - kept for backwards compatibility
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
     unit_of_measure = db.Column(db.String(20), nullable=False)  # kg, pcs, m, L, etc.
     reorder_level = db.Column(db.Float, default=0)
     reorder_quantity = db.Column(db.Float, default=0)
@@ -26,6 +27,7 @@ class Material(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
+    category_obj = db.relationship('Category', backref='materials', foreign_keys=[category_id])
     inventory_levels = db.relationship('InventoryLevel', backref='material', lazy='dynamic',
                                       foreign_keys='InventoryLevel.material_id')
     batches = db.relationship('Batch', backref='material', lazy='dynamic',
@@ -54,7 +56,9 @@ class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True, nullable=False, index=True)
     description = db.Column(db.Text)
-    category = db.Column(db.String(100))
+    category = db.Column(db.String(100))  # Legacy field - kept for backwards compatibility
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True)
     unit_of_measure = db.Column(db.String(20), nullable=False)
     reorder_level = db.Column(db.Float, default=0)
     reorder_quantity = db.Column(db.Float, default=0)
@@ -63,6 +67,8 @@ class Item(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
+    category_obj = db.relationship('Category', backref='items', foreign_keys=[category_id])
+    client = db.relationship('Client', backref='items', foreign_keys=[client_id])
     inventory_levels = db.relationship('InventoryLevel', backref='item', lazy='dynamic',
                                       foreign_keys='InventoryLevel.item_id')
     batches = db.relationship('Batch', backref='item', lazy='dynamic',
@@ -527,5 +533,60 @@ class User(UserMixin, db.Model):
             'username': self.username,
             'full_name': self.full_name,
             'email': self.email,
+            'active': self.active
+        }
+
+
+class Category(db.Model):
+    """Categories for materials and items"""
+    __tablename__ = 'categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    description = db.Column(db.Text)
+    category_type = db.Column(db.String(20), nullable=False)  # 'material' or 'item'
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Category {self.name} ({self.category_type})>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'category_type': self.category_type,
+            'active': self.active
+        }
+
+
+class Client(db.Model):
+    """Clients for finished goods"""
+    __tablename__ = 'clients'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), unique=True, nullable=False, index=True)
+    code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    contact_person = db.Column(db.String(200))
+    email = db.Column(db.String(200))
+    phone = db.Column(db.String(50))
+    address = db.Column(db.Text)
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Client {self.code} - {self.name}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'code': self.code,
+            'contact_person': self.contact_person,
+            'email': self.email,
+            'phone': self.phone,
+            'address': self.address,
             'active': self.active
         }
