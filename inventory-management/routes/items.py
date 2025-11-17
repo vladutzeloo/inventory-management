@@ -3,7 +3,7 @@ Items master data management routes
 """
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from flask_login import login_required, current_user
-from models import db, Item, InventoryLevel
+from models import db, Item, InventoryLevel, Category, Client
 from sqlalchemy import func, or_
 from openpyxl import Workbook, load_workbook
 from io import BytesIO
@@ -70,10 +70,21 @@ def new():
     """Create new item"""
     if request.method == 'POST':
         try:
+            # Get category_id and client_id from form
+            category_id = request.form.get('category_id')
+            if category_id:
+                category_id = int(category_id) if category_id else None
+
+            client_id = request.form.get('client_id')
+            if client_id:
+                client_id = int(client_id) if client_id else None
+
             item = Item(
                 name=request.form['name'].strip(),
                 description=request.form.get('description', '').strip(),
-                category=request.form.get('category', '').strip(),
+                category=request.form.get('category', '').strip(),  # Keep legacy field for backwards compatibility
+                category_id=category_id,
+                client_id=client_id,
                 unit_of_measure=request.form['unit_of_measure'].strip(),
                 reorder_level=float(request.form.get('reorder_level', 0)),
                 reorder_quantity=float(request.form.get('reorder_quantity', 0)),
@@ -90,14 +101,11 @@ def new():
             db.session.rollback()
             flash(f'Error creating item: {str(e)}', 'danger')
 
-    # Get existing categories for datalist
-    categories = db.session.query(Item.category).filter(
-        Item.category.isnot(None),
-        Item.category != ''
-    ).distinct().order_by(Item.category).all()
-    categories = [c[0] for c in categories]
+    # Get active item categories and clients
+    categories = Category.query.filter_by(category_type='item', active=True).order_by(Category.name).all()
+    clients = Client.query.filter_by(active=True).order_by(Client.name).all()
 
-    return render_template('items/new.html', categories=categories)
+    return render_template('items/new.html', categories=categories, clients=clients)
 
 
 @bp.route('/<int:id>/edit', methods=['GET', 'POST'])
@@ -108,9 +116,20 @@ def edit(id):
 
     if request.method == 'POST':
         try:
+            # Get category_id and client_id from form
+            category_id = request.form.get('category_id')
+            if category_id:
+                category_id = int(category_id) if category_id else None
+
+            client_id = request.form.get('client_id')
+            if client_id:
+                client_id = int(client_id) if client_id else None
+
             item.name = request.form['name'].strip()
             item.description = request.form.get('description', '').strip()
-            item.category = request.form.get('category', '').strip()
+            item.category = request.form.get('category', '').strip()  # Keep legacy field
+            item.category_id = category_id
+            item.client_id = client_id
             item.unit_of_measure = request.form['unit_of_measure'].strip()
             item.reorder_level = float(request.form.get('reorder_level', 0))
             item.reorder_quantity = float(request.form.get('reorder_quantity', 0))
@@ -125,14 +144,11 @@ def edit(id):
             db.session.rollback()
             flash(f'Error updating item: {str(e)}', 'danger')
 
-    # Get existing categories for datalist
-    categories = db.session.query(Item.category).filter(
-        Item.category.isnot(None),
-        Item.category != ''
-    ).distinct().order_by(Item.category).all()
-    categories = [c[0] for c in categories]
+    # Get active item categories and clients
+    categories = Category.query.filter_by(category_type='item', active=True).order_by(Category.name).all()
+    clients = Client.query.filter_by(active=True).order_by(Client.name).all()
 
-    return render_template('items/edit.html', item=item, categories=categories)
+    return render_template('items/edit.html', item=item, categories=categories, clients=clients)
 
 
 @bp.route('/<int:id>/delete', methods=['POST'])

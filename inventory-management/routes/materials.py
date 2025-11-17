@@ -3,7 +3,7 @@ Materials master data management routes
 """
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from flask_login import login_required, current_user
-from models import db, Material, InventoryLevel
+from models import db, Material, InventoryLevel, Category, Provider
 from sqlalchemy import func, or_
 from openpyxl import Workbook, load_workbook
 from io import BytesIO
@@ -70,10 +70,21 @@ def new():
     """Create new material"""
     if request.method == 'POST':
         try:
+            # Get category_id and provider_id from form
+            category_id = request.form.get('category_id')
+            if category_id:
+                category_id = int(category_id) if category_id else None
+
+            provider_id = request.form.get('provider_id')
+            if provider_id:
+                provider_id = int(provider_id) if provider_id else None
+
             material = Material(
                 name=request.form['name'].strip(),
                 description=request.form.get('description', '').strip(),
-                category=request.form.get('category', '').strip(),
+                category=request.form.get('category', '').strip(),  # Keep legacy field for backwards compatibility
+                category_id=category_id,
+                provider_id=provider_id,
                 unit_of_measure=request.form['unit_of_measure'].strip(),
                 reorder_level=float(request.form.get('reorder_level', 0)),
                 reorder_quantity=float(request.form.get('reorder_quantity', 0)),
@@ -90,14 +101,11 @@ def new():
             db.session.rollback()
             flash(f'Error creating material: {str(e)}', 'danger')
 
-    # Get existing categories for datalist
-    categories = db.session.query(Material.category).filter(
-        Material.category.isnot(None),
-        Material.category != ''
-    ).distinct().order_by(Material.category).all()
-    categories = [c[0] for c in categories]
+    # Get active material categories and providers
+    categories = Category.query.filter_by(category_type='material', active=True).order_by(Category.name).all()
+    providers = Provider.query.filter_by(active=True).order_by(Provider.name).all()
 
-    return render_template('materials/new.html', categories=categories)
+    return render_template('materials/new.html', categories=categories, providers=providers)
 
 
 @bp.route('/<int:id>/edit', methods=['GET', 'POST'])
@@ -108,9 +116,20 @@ def edit(id):
 
     if request.method == 'POST':
         try:
+            # Get category_id and provider_id from form
+            category_id = request.form.get('category_id')
+            if category_id:
+                category_id = int(category_id) if category_id else None
+
+            provider_id = request.form.get('provider_id')
+            if provider_id:
+                provider_id = int(provider_id) if provider_id else None
+
             material.name = request.form['name'].strip()
             material.description = request.form.get('description', '').strip()
-            material.category = request.form.get('category', '').strip()
+            material.category = request.form.get('category', '').strip()  # Keep legacy field
+            material.category_id = category_id
+            material.provider_id = provider_id
             material.unit_of_measure = request.form['unit_of_measure'].strip()
             material.reorder_level = float(request.form.get('reorder_level', 0))
             material.reorder_quantity = float(request.form.get('reorder_quantity', 0))
@@ -125,14 +144,11 @@ def edit(id):
             db.session.rollback()
             flash(f'Error updating material: {str(e)}', 'danger')
 
-    # Get existing categories for datalist
-    categories = db.session.query(Material.category).filter(
-        Material.category.isnot(None),
-        Material.category != ''
-    ).distinct().order_by(Material.category).all()
-    categories = [c[0] for c in categories]
+    # Get active material categories and providers
+    categories = Category.query.filter_by(category_type='material', active=True).order_by(Category.name).all()
+    providers = Provider.query.filter_by(active=True).order_by(Provider.name).all()
 
-    return render_template('materials/edit.html', material=material, categories=categories)
+    return render_template('materials/edit.html', material=material, categories=categories, providers=providers)
 
 
 @bp.route('/<int:id>/delete', methods=['POST'])

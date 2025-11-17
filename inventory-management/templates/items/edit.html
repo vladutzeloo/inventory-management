@@ -35,24 +35,41 @@
 
                         <!-- Category -->
                         <div class="col-md-6 mb-3">
-                            <label for="category" class="form-label">
+                            <label for="category_id" class="form-label">
                                 <i class="fas fa-folder text-primary"></i> Category
                             </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="category"
-                                   name="category"
-                                   list="categoryList"
-                                   maxlength="100"
-                                   value="{{ item.category or '' }}"
-                                   placeholder="Enter or select category">
-                            <datalist id="categoryList">
+                            <select class="form-select select2"
+                                    id="category_id"
+                                    name="category_id"
+                                    data-placeholder="Select a category">
+                                <option value="">-- Select Category --</option>
                                 {% for cat in categories %}
-                                <option value="{{ cat }}">
+                                <option value="{{ cat.id }}" {% if item.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                                 {% endfor %}
-                            </datalist>
+                            </select>
                             <small class="form-text text-muted">
-                                E.g., Finished Goods, Assemblies, Sub-assemblies
+                                Group items by category. <a href="{{ url_for('organization.categories') }}" target="_blank">Manage categories</a>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Client -->
+                        <div class="col-md-12 mb-3">
+                            <label for="client_id" class="form-label">
+                                <i class="fas fa-users text-primary"></i> Client
+                            </label>
+                            <select class="form-select select2"
+                                    id="client_id"
+                                    name="client_id"
+                                    data-placeholder="Select a client">
+                                <option value="">-- Select Client --</option>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}" {% if item.client_id == client.id %}selected{% endif %}>{{ client.name }} ({{ client.code }})</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                Optional: Select the client this item is produced for. <a href="{{ url_for('organization.clients') }}" target="_blank">Manage clients</a>
                             </small>
                         </div>
                     </div>
