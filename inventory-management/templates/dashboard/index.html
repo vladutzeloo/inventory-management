@@ -168,33 +168,137 @@
 </div>
 {% endif %}
 
-<!-- Charts Row -->
+<!-- Charts Row 1: Activity Trends -->
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-12">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Inventory Distribution by Location</h5>
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line"></i> Activity Trends - Last 30 Days
+                    <small class="float-end">Track daily operations</small>
+                </h5>
             </div>
             <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="locationChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Materials vs Items Inventory</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="inventoryTypeChart"></canvas>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="activityTrendsChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Charts Row 2: Value & Health Analysis -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-trophy"></i> Top 10 Items by Value
+                    <small class="float-end">Where's your money?</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="topValueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-heartbeat"></i> Stock Health Status
+                    <small class="float-end">Inventory health</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="stockHealthChart"></canvas>
+                </div>
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <h5 class="text-danger">{{ stock_health.critical }}</h5>
+                        <small class="text-muted">Out of Stock</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-warning">{{ stock_health.low }}</h5>
+                        <small class="text-muted">Low Stock</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-success">{{ stock_health.normal }}</h5>
+                        <small class="text-muted">Normal Stock</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 3: Category Distribution -->
+{% if category_values %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i> Inventory Value by Category
+                    <small class="float-end">Business distribution</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="categoryValueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-history"></i> Recent Activity (Last 7 Days)
+                </h5>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if recent_transactions %}
+                <div class="timeline">
+                    {% for txn in recent_transactions %}
+                    <div class="timeline-item mb-3">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 me-3">
+                                {% if txn.transaction_type == 'receipt' %}
+                                <i class="fas fa-arrow-down text-success fa-2x"></i>
+                                {% elif txn.transaction_type == 'transfer' %}
+                                <i class="fas fa-exchange-alt text-primary fa-2x"></i>
+                                {% elif txn.transaction_type == 'adjustment' %}
+                                <i class="fas fa-edit text-warning fa-2x"></i>
+                                {% elif txn.transaction_type == 'scrap' %}
+                                <i class="fas fa-trash text-danger fa-2x"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ txn.transaction_type|title }}</strong>
+                                    <small class="text-muted">{{ txn.transaction_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                <div class="text-muted small">
+                                    {{ txn.material.name if txn.material else (txn.item.name if txn.item else 'Unknown') }}
+                                    <span class="badge bg-secondary">{{ txn.quantity_change }} units</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Inventory by Location -->
 <div class="row mb-4">
@@ -264,40 +368,164 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// Professional blue color scheme
-const blueColors = [
-    'rgba(30, 58, 138, 0.8)',    // primary-blue
-    'rgba(37, 99, 235, 0.8)',    // secondary-blue
-    'rgba(59, 130, 246, 0.8)',   // light-blue
-    'rgba(96, 165, 250, 0.8)',   // accent-blue
-    'rgba(147, 197, 253, 0.8)',  // lighter-blue
-    'rgba(191, 219, 254, 0.8)',  // very-light-blue
-];
+// Chart.js defaults
+Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
 
-const borderColors = [
-    'rgba(30, 58, 138, 1)',
-    'rgba(37, 99, 235, 1)',
-    'rgba(59, 130, 246, 1)',
-    'rgba(96, 165, 250, 1)',
-    'rgba(147, 197, 253, 1)',
-    'rgba(191, 219, 254, 1)',
-];
+// 1. Activity Trends Chart - Line Chart (30 days)
+const activityData = {{ activity_data|tojson }};
+const activityTrendsChart = new Chart(document.getElementById('activityTrendsChart'), {
+    type: 'line',
+    data: {
+        labels: activityData.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
+        datasets: [
+            {
+                label: 'Receipts',
+                data: activityData.map(d => d.receipts),
+                borderColor: 'rgba(34, 197, 94, 1)',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Transfers',
+                data: activityData.map(d => d.transfers),
+                borderColor: 'rgba(59, 130, 246, 1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Scraps',
+                data: activityData.map(d => d.scraps),
+                borderColor: 'rgba(239, 68, 68, 1)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                tension: 0.4,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                align: 'end'
+            },
+            tooltip: {
+                callbacks: {
+                    title: function(context) {
+                        return activityData[context[0].dataIndex].date;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        }
+    }
+});
 
-// Location Distribution Chart (Pie)
-const locationData = {
-    labels: [{% for location in inventory_by_location %}'{{ location[0] }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-    datasets: [{
-        label: 'Quantity by Location',
-        data: [{% for location in inventory_by_location %}{{ location[1] }}{% if not loop.last %}, {% endif %}{% endfor %}],
-        backgroundColor: blueColors,
-        borderColor: borderColors,
-        borderWidth: 2
-    }]
-};
+// 2. Top Items by Value Chart - Horizontal Bar
+const topValueData = {{ top_by_value|tojson }};
+const topValueChart = new Chart(document.getElementById('topValueChart'), {
+    type: 'bar',
+    data: {
+        labels: topValueData.map(item => item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name),
+        datasets: [{
+            label: 'Value (€)',
+            data: topValueData.map(item => item.value),
+            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+            borderColor: 'rgba(34, 197, 94, 1)',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return '€' + context.parsed.x.toFixed(2);
+                    },
+                    afterLabel: function(context) {
+                        return topValueData[context.dataIndex].type;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '€' + value.toFixed(0);
+                    }
+                },
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            y: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
 
-const locationChart = new Chart(document.getElementById('locationChart'), {
+// 3. Stock Health Chart - Doughnut
+const stockHealthData = {{ stock_health|tojson }};
+const stockHealthChart = new Chart(document.getElementById('stockHealthChart'), {
     type: 'doughnut',
-    data: locationData,
+    data: {
+        labels: ['Out of Stock', 'Low Stock', 'Normal Stock'],
+        datasets: [{
+            data: [stockHealthData.critical, stockHealthData.low, stockHealthData.normal],
+            backgroundColor: [
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(251, 191, 36, 0.8)',
+                'rgba(34, 197, 94, 0.8)'
+            ],
+            borderColor: [
+                'rgba(239, 68, 68, 1)',
+                'rgba(251, 191, 36, 1)',
+                'rgba(34, 197, 94, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
     options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -307,76 +535,74 @@ const locationChart = new Chart(document.getElementById('locationChart'), {
                 labels: {
                     padding: 15,
                     font: {
-                        size: 12,
-                        family: "'Segoe UI', Arial, sans-serif"
+                        size: 12
                     }
                 }
             },
-            title: {
-                display: false
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const total = stockHealthData.critical + stockHealthData.low + stockHealthData.normal;
+                        const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                        return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                    }
+                }
             }
         }
     }
 });
 
-// Calculate total materials and items quantities
-const totalMaterialsQty = {% for location in inventory_by_location %}{{ location[2] }}{% if not loop.last %} + {% endif %}{% endfor %} || 0;
-const totalItemsQty = {% for location in inventory_by_location %}{{ location[3] }}{% if not loop.last %} + {% endif %}{% endfor %} || 0;
+// 4. Category Value Distribution Chart - Pie
+{% if category_values %}
+const categoryData = {{ category_values|tojson }};
+const categoryColors = [
+    'rgba(59, 130, 246, 0.8)',
+    'rgba(34, 197, 94, 0.8)',
+    'rgba(251, 191, 36, 0.8)',
+    'rgba(239, 68, 68, 0.8)',
+    'rgba(168, 85, 247, 0.8)',
+    'rgba(236, 72, 153, 0.8)',
+    'rgba(14, 165, 233, 0.8)',
+    'rgba(249, 115, 22, 0.8)'
+];
 
-// Materials vs Items Chart (Bar)
-const inventoryTypeData = {
-    labels: ['Materials', 'Items'],
-    datasets: [{
-        label: 'Count',
-        data: [totalMaterialsQty, totalItemsQty],
-        backgroundColor: [
-            'rgba(37, 99, 235, 0.8)',
-            'rgba(8, 145, 178, 0.8)'
-        ],
-        borderColor: [
-            'rgba(37, 99, 235, 1)',
-            'rgba(8, 145, 178, 1)'
-        ],
-        borderWidth: 2
-    }]
-};
-
-const inventoryTypeChart = new Chart(document.getElementById('inventoryTypeChart'), {
-    type: 'bar',
-    data: inventoryTypeData,
+const categoryValueChart = new Chart(document.getElementById('categoryValueChart'), {
+    type: 'pie',
+    data: {
+        labels: categoryData.map(item => item[0]),
+        datasets: [{
+            data: categoryData.map(item => item[1]),
+            backgroundColor: categoryColors,
+            borderColor: categoryColors.map(c => c.replace('0.8', '1')),
+            borderWidth: 2
+        }]
+    },
     options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                display: false
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
+                position: 'right',
+                labels: {
+                    padding: 12,
                     font: {
                         size: 11
                     }
-                },
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
                 }
             },
-            x: {
-                ticks: {
-                    font: {
-                        size: 12,
-                        weight: '600'
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const value = context.parsed;
+                        const total = categoryData.reduce((sum, item) => sum + item[1], 0);
+                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        return context.label + ': €' + value.toFixed(2) + ' (' + percentage + '%)';
                     }
-                },
-                grid: {
-                    display: false
                 }
             }
         }
     }
 });
+{% endif %}
 </script>
 {% endblock %}
