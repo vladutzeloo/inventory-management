@@ -36,8 +36,11 @@ class Config:
     SQLALCHEMY_ECHO = os.environ.get('DEBUG', 'False').lower() == 'true'
 
     # Session
-    SESSION_LIFETIME_HOURS = int(os.environ.get('SESSION_LIFETIME_HOURS', '24'))
+    SESSION_LIFETIME_HOURS = int(os.environ.get('SESSION_LIFETIME_HOURS', '1'))
     PERMANENT_SESSION_LIFETIME = timedelta(hours=SESSION_LIFETIME_HOURS)
+
+    # Inactivity timeout (in minutes)
+    SESSION_INACTIVITY_TIMEOUT = int(os.environ.get('SESSION_INACTIVITY_TIMEOUT', '60'))
 
     # File uploads
     MAX_UPLOAD_SIZE_MB = int(os.environ.get('MAX_UPLOAD_SIZE_MB', '16'))

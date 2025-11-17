@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-user-edit"></i> Edit User: {{ user.username }}</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('users.edit', user_id=user.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username"
+                               value="{{ user.username }}" disabled readonly>
+                        <small class="form-text text-muted">Username cannot be changed.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name"
+                               value="{{ user.full_name or '' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email"
+                               value="{{ user.email or '' }}">
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="password" name="password">
+                        <small class="form-text text-muted">Leave blank to keep current password.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password_confirm" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="password_confirm" name="password_confirm">
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('users.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> User Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        {% if user.active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '-' }}</dd>
+
+                    <dt class="col-sm-4">User ID:</dt>
+                    <dd class="col-sm-8">{{ user.id }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3">
+            <h6><i class="fas fa-info-circle"></i> Password Change</h6>
+            <p class="mb-0 small">
+                If you want to change the password, enter the new password in both fields.
+                Otherwise, leave them blank to keep the current password.
+            </p>
+        </div>
+
+        {% if user.username == 'admin' %}
+        <div class="alert alert-warning mt-3">
+            <h6><i class="fas fa-shield-alt"></i> Admin Account</h6>
+            <p class="mb-0 small">
+                This is the admin account. It cannot be disabled or deleted to ensure system access.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
