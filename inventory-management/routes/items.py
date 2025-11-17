@@ -19,6 +19,9 @@ def index():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
     category = request.args.get('category', '', type=str)
+    client_id = request.args.get('client_id', '', type=str)
+    unit_of_measure = request.args.get('unit_of_measure', '', type=str)
+    active_filter = request.args.get('active', '', type=str)
 
     query = Item.query
 
@@ -35,12 +38,30 @@ def index():
     if category:
         query = query.filter(Item.category == category)
 
+    # Client filter
+    if client_id:
+        query = query.filter(Item.client_id == int(client_id))
+
+    # Unit of Measure filter
+    if unit_of_measure:
+        query = query.filter(Item.unit_of_measure.ilike(f'%{unit_of_measure}%'))
+
+    # Active/Inactive filter
+    if active_filter == 'active':
+        query = query.filter(Item.active == True)
+    elif active_filter == 'inactive':
+        query = query.filter(Item.active == False)
+
     # Get all categories for filter dropdown
     categories = db.session.query(Item.category).filter(
         Item.category.isnot(None),
         Item.category != ''
     ).distinct().order_by(Item.category).all()
     categories = [c[0] for c in categories]
+
+    # Get all active clients for filter dropdown
+    from models import Client
+    clients = Client.query.filter_by(active=True).order_by(Client.name).all()
 
     # Pagination
     pagination = query.order_by(Item.name).paginate(
@@ -61,7 +82,11 @@ def index():
                           pagination=pagination,
                           search=search,
                           category=category,
-                          categories=categories)
+                          categories=categories,
+                          client_id=client_id,
+                          clients=clients,
+                          unit_of_measure=unit_of_measure,
+                          active_filter=active_filter)
 
 
 @bp.route('/new', methods=['GET', 'POST'])

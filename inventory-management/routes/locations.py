@@ -13,7 +13,39 @@ bp = Blueprint('locations', __name__)
 @login_required
 def index():
     """List all locations"""
-    locations = Location.query.order_by(Location.location_type, Location.code).all()
+    # Get filter parameters
+    search = request.args.get('search', '', type=str)
+    location_type = request.args.get('location_type', '', type=str)
+    active_filter = request.args.get('active', '', type=str)
+    page = request.args.get('page', 1, type=int)
+
+    query = Location.query
+
+    # Search filter (by code or name)
+    if search:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                Location.code.ilike(f'%{search}%'),
+                Location.name.ilike(f'%{search}%')
+            )
+        )
+
+    # Type filter
+    if location_type:
+        query = query.filter(Location.location_type == location_type)
+
+    # Active/Inactive filter
+    if active_filter == 'active':
+        query = query.filter(Location.active == True)
+    elif active_filter == 'inactive':
+        query = query.filter(Location.active == False)
+
+    # Pagination
+    pagination = query.order_by(Location.location_type, Location.code).paginate(
+        page=page, per_page=50, error_out=False
+    )
+    locations = pagination.items
 
     # Get inventory count for each location
     locations_with_inventory = []
@@ -32,7 +64,11 @@ def index():
         locations_with_inventory.append((location, inventory_count, total_qty, bin_count))
 
     return render_template('locations/index.html',
-                          locations=locations_with_inventory)
+                          locations=locations_with_inventory,
+                          pagination=pagination,
+                          search=search,
+                          location_type=location_type,
+                          active_filter=active_filter)
 
 
 @bp.route('/new', methods=['GET', 'POST'])

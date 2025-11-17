@@ -21,23 +21,68 @@ def generate_scrap_number():
 @bp.route('/')
 @login_required
 def index():
-    """List all scraps"""
+    """List all scraps with advanced filtering"""
     page = request.args.get('page', 1, type=int)
-    search = request.args.get('search', '', type=str)
+    date_from = request.args.get('date_from', '', type=str)
+    date_to = request.args.get('date_to', '', type=str)
+    location_id = request.args.get('location_id', '', type=str)
+    material_item_search = request.args.get('material_item_search', '', type=str)
+    reason = request.args.get('reason', '', type=str)
 
     query = Scrap.query
 
-    if search:
-        query = query.filter(Scrap.scrap_number.ilike(f'%{search}%'))
+    # Date range filter
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            query = query.filter(Scrap.scrap_date >= date_from_obj)
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            # Include the entire end date
+            from datetime import timedelta
+            date_to_obj = date_to_obj + timedelta(days=1)
+            query = query.filter(Scrap.scrap_date < date_to_obj)
+        except ValueError:
+            pass
+
+    # Location filter
+    if location_id:
+        query = query.filter(Scrap.location_id == int(location_id))
+
+    # Material/Item filter
+    if material_item_search:
+        query = query.outerjoin(Material, Scrap.material_id == Material.id).outerjoin(Item, Scrap.item_id == Item.id).filter(
+            (Material.name.ilike(f'%{material_item_search}%')) |
+            (Item.name.ilike(f'%{material_item_search}%'))
+        )
+
+    # Reason filter
+    if reason:
+        query = query.filter(Scrap.reason == reason)
+
+    # Apply distinct to avoid duplicates when joining
+    query = query.distinct()
 
     pagination = query.order_by(Scrap.scrap_date.desc()).paginate(
         page=page, per_page=50, error_out=False
     )
 
+    # Load locations for filter dropdown
+    locations = Location.query.filter_by(active=True).order_by(Location.code).all()
+
     return render_template('scraps/index.html',
                           scraps=pagination.items,
                           pagination=pagination,
-                          search=search)
+                          date_from=date_from,
+                          date_to=date_to,
+                          location_id=location_id,
+                          material_item_search=material_item_search,
+                          reason=reason,
+                          locations=locations)
 
 
 @bp.route('/new', methods=['GET', 'POST'])
