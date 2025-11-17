@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Add User - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-user-plus"></i> Add User</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('users.add') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        <small class="form-text text-muted">Username must be unique.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="full_name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <small class="form-text text-muted">Minimum 6 characters recommended.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password_confirm" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('users.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="alert alert-info">
+            <h5><i class="fas fa-info-circle"></i> User Account Information</h5>
+            <ul class="mb-0">
+                <li>Username must be unique and cannot be changed later</li>
+                <li>Full Name and Email are optional but recommended</li>
+                <li>Password should be strong and at least 6 characters</li>
+                <li>New users are automatically set to Active status</li>
+            </ul>
+        </div>
+
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-exclamation-triangle"></i> Security Best Practices</h5>
+            <ul class="mb-0">
+                <li>Use strong, unique passwords for each user</li>
+                <li>Avoid using default or easy-to-guess passwords</li>
+                <li>Regularly review and update user accounts</li>
+                <li>Deactivate accounts that are no longer needed</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

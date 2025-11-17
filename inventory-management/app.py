@@ -68,7 +68,7 @@ def create_app(config_name='default'):
 
     # Register blueprints
     from routes import auth, dashboard, materials, items, locations, bins
-    from routes import receipts, transfers, adjustments, scraps, reports, organization, imports
+    from routes import receipts, transfers, adjustments, scraps, reports, organization, imports, users
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
@@ -83,6 +83,7 @@ def create_app(config_name='default'):
     app.register_blueprint(reports.bp, url_prefix='/reports')
     app.register_blueprint(organization.bp, url_prefix='/organization')
     app.register_blueprint(imports.bp, url_prefix='/imports')
+    app.register_blueprint(users.bp, url_prefix='/users')
 
     # Root route
     @app.route('/')

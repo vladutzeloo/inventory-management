@@ -71,6 +71,13 @@
                             <li><a class="dropdown-item" href="{{ url_for('organization.providers') }}"><i class="fas fa-truck"></i> Providers</a></li>
                         </ul>
                     </li>
+                    {% if current_user.username == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('users.index') }}">
+                            <i class="fas fa-users-cog"></i> Users
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
@@ -123,6 +130,83 @@
             });
         });
     </script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        // Session inactivity timeout - Auto logout after 1 hour of inactivity
+        (function() {
+            const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 60 minutes in milliseconds
+            const WARNING_TIME = 5 * 60 * 1000; // Show warning 5 minutes before logout
+            let inactivityTimer;
+            let warningTimer;
+            let warningShown = false;
+
+            function resetTimer() {
+                // Clear existing timers
+                clearTimeout(inactivityTimer);
+                clearTimeout(warningTimer);
+                warningShown = false;
+
+                // Set warning timer (5 minutes before logout)
+                warningTimer = setTimeout(function() {
+                    if (!warningShown) {
+                        warningShown = true;
+                        showWarning();
+                    }
+                }, INACTIVITY_TIMEOUT - WARNING_TIME);
+
+                // Set logout timer
+                inactivityTimer = setTimeout(function() {
+                    logout();
+                }, INACTIVITY_TIMEOUT);
+            }
+
+            function showWarning() {
+                // Create warning toast/alert
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'inactivity-warning';
+                warningDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                warningDiv.style.zIndex = '9999';
+                warningDiv.style.minWidth = '300px';
+                warningDiv.innerHTML = `
+                    <strong><i class="fas fa-clock"></i> Inactivity Warning</strong><br>
+                    You will be logged out in 5 minutes due to inactivity.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(warningDiv);
+
+                // Remove warning on any activity
+                const removeWarning = function() {
+                    const warning = document.getElementById('inactivity-warning');
+                    if (warning) {
+                        warning.remove();
+                    }
+                };
+
+                // Activity will reset timer and remove warning
+                document.addEventListener('mousemove', removeWarning, { once: true });
+                document.addEventListener('keypress', removeWarning, { once: true });
+                document.addEventListener('click', removeWarning, { once: true });
+            }
+
+            function logout() {
+                // Redirect to logout page
+                window.location.href = "{{ url_for('auth.logout') }}";
+            }
+
+            // Events that reset the inactivity timer
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+            events.forEach(function(event) {
+                document.addEventListener(event, resetTimer, true);
+            });
+
+            // Start the timer when page loads
+            resetTimer();
+        })();
+    </script>
+    {% endif %}
+
     {% block scripts %}{% endblock %}
 </body>
 </html>
