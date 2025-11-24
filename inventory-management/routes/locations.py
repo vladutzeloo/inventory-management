@@ -1,10 +1,14 @@
 """
 Locations and bins management routes
 """
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, send_file
 from flask_login import login_required, current_user
 from models import db, Location, Bin, InventoryLevel
 from sqlalchemy import func
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font, PatternFill
+from io import BytesIO
+from datetime import datetime
 
 bp = Blueprint('locations', __name__)
 
@@ -372,3 +376,209 @@ def api_bins_with_stock():
             })
 
     return jsonify(bins_data)
+
+
+@bp.route('/bins/import', methods=['GET', 'POST'])
+@login_required
+def import_bins():
+    """Import bins from Excel file"""
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file uploaded.', 'danger')
+            return redirect(url_for('locations.import_bins'))
+
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected.', 'danger')
+            return redirect(url_for('locations.import_bins'))
+
+        if not file.filename.endswith(('.xlsx', '.xls')):
+            flash('Please upload an Excel file (.xlsx or .xls).', 'danger')
+            return redirect(url_for('locations.import_bins'))
+
+        try:
+            wb = load_workbook(file)
+            ws = wb.active
+
+            # Skip header row
+            rows = list(ws.iter_rows(min_row=2, values_only=True))
+
+            imported = 0
+            updated = 0
+            errors = []
+
+            for idx, row in enumerate(rows, start=2):
+                if not row[0]:  # Skip empty rows
+                    continue
+
+                try:
+                    location_code = str(row[0]).strip().upper()
+                    bin_code = str(row[1]).strip().upper() if row[1] else None
+                    description = str(row[2] or '').strip() if len(row) > 2 else ''
+                    active = str(row[3] or 'Yes').lower() in ['yes', 'true', '1', 'active'] if len(row) > 3 else True
+
+                    if not bin_code:
+                        errors.append(f"Row {idx}: Bin code is required")
+                        continue
+
+                    # Find the location
+                    location = Location.query.filter_by(code=location_code).first()
+                    if not location:
+                        errors.append(f"Row {idx}: Location '{location_code}' not found")
+                        continue
+
+                    # Check if bin already exists for this location
+                    existing_bin = Bin.query.filter_by(
+                        location_id=location.id,
+                        bin_code=bin_code
+                    ).first()
+
+                    if existing_bin:
+                        # Update existing bin
+                        existing_bin.description = description
+                        existing_bin.active = active
+                        updated += 1
+                    else:
+                        # Create new bin
+                        new_bin = Bin(
+                            location_id=location.id,
+                            bin_code=bin_code,
+                            description=description,
+                            active=active
+                        )
+                        db.session.add(new_bin)
+                        imported += 1
+
+                except Exception as e:
+                    errors.append(f"Row {idx}: {str(e)}")
+
+            db.session.commit()
+
+            if errors:
+                flash(f'Import completed with errors. Imported: {imported}, Updated: {updated}. Errors: {"; ".join(errors[:5])}{"..." if len(errors) > 5 else ""}', 'warning')
+            else:
+                flash(f'Import successful! Imported: {imported}, Updated: {updated}.', 'success')
+
+            return redirect(url_for('locations.index'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error importing file: {str(e)}', 'danger')
+
+    # Get all locations for reference
+    locations = Location.query.filter_by(active=True).order_by(Location.code).all()
+    return render_template('locations/import_bins.html', locations=locations)
+
+
+@bp.route('/bins/export')
+@login_required
+def export_bins():
+    """Export all bins to Excel"""
+    # Query all bins with their locations
+    bins = db.session.query(Bin, Location).join(Location).order_by(Location.code, Bin.bin_code).all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Bins"
+
+    # Headers with styling
+    headers = ['Location Code', 'Bin Code', 'Description', 'Active', 'Location Name', 'Location Type']
+    header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF')
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # Data rows
+    for row_idx, (bin, location) in enumerate(bins, start=2):
+        ws.cell(row=row_idx, column=1, value=location.code)
+        ws.cell(row=row_idx, column=2, value=bin.bin_code)
+        ws.cell(row=row_idx, column=3, value=bin.description or '')
+        ws.cell(row=row_idx, column=4, value='Yes' if bin.active else 'No')
+        ws.cell(row=row_idx, column=5, value=location.name)
+        ws.cell(row=row_idx, column=6, value=location.location_type)
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Save to BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"bins_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
+
+
+@bp.route('/bins/template')
+@login_required
+def download_bins_template():
+    """Download Excel template for bins import"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Bins Template"
+
+    # Headers with styling
+    headers = ['Location Code', 'Bin Code', 'Description', 'Active']
+    header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF')
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # Sample data rows
+    sample_data = [
+        ['WH-01', 'A-01', 'Aisle A, Row 1', 'Yes'],
+        ['WH-01', 'A-02', 'Aisle A, Row 2', 'Yes'],
+        ['WH-01', 'B-01', 'Aisle B, Row 1', 'Yes'],
+        ['WH-02', 'C-01', 'Zone C, Shelf 1', 'Yes'],
+    ]
+
+    for row_idx, row_data in enumerate(sample_data, start=2):
+        for col_idx, value in enumerate(row_data, 1):
+            ws.cell(row=row_idx, column=col_idx, value=value)
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Save to BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='bins_import_template.xlsx'
+    )
