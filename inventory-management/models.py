@@ -23,6 +23,10 @@ class Material(db.Model):
     unit_of_measure = db.Column(db.String(20), nullable=False)  # kg, pcs, m, L, etc.
     reorder_level = db.Column(db.Float, default=0)
     reorder_quantity = db.Column(db.Float, default=0)
+    # Dimensions
+    diameter = db.Column(db.Float, nullable=True)  # Diameter in specified UOM
+    length = db.Column(db.Float, nullable=True)    # Length in specified UOM
+    width = db.Column(db.Float, nullable=True)     # Width in specified UOM
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -64,6 +68,10 @@ class Item(db.Model):
     unit_of_measure = db.Column(db.String(20), nullable=False)
     reorder_level = db.Column(db.Float, default=0)
     reorder_quantity = db.Column(db.Float, default=0)
+    # Dimensions
+    diameter = db.Column(db.Float, nullable=True)  # Diameter in specified UOM
+    length = db.Column(db.Float, nullable=True)    # Length in specified UOM
+    width = db.Column(db.Float, nullable=True)     # Width in specified UOM
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

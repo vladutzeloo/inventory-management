@@ -4,7 +4,7 @@ Reports routes - Inventory reports with Excel export
 from flask import Blueprint, render_template, request, send_file
 from flask_login import login_required
 from models import (db, Material, Item, Location, Bin, InventoryLevel, Batch,
-                   InventoryTransaction)
+                   InventoryTransaction, Scrap, ScrapBatch)
 from sqlalchemy import func, case
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -59,7 +59,8 @@ def stock_by_location():
     return render_template('reports/stock_by_location.html',
                           stock_data=stock_data,
                           locations=locations,
-                          location_filter=location_filter)
+                          location_filter=location_filter,
+                          report_date=datetime.now())
 
 
 @bp.route('/stock-by-location/export')
@@ -103,16 +104,22 @@ def export_stock_by_location():
     header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
     header_font = Font(color="FFFFFF", bold=True)
 
+    # Report date header
+    ws.merge_cells('A1:E1')
+    date_cell = ws.cell(row=1, column=1, value=f"Stock by Location Report - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    date_cell.font = Font(bold=True, size=14)
+    date_cell.alignment = Alignment(horizontal='center', vertical='center')
+
     # Headers
     headers = ['Location Code', 'Location Name', 'Bin', 'Material/Item', 'Quantity']
     for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
+        cell = ws.cell(row=2, column=col, value=header)
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal='center', vertical='center')
 
     # Data
-    for row, data in enumerate(stock_data, 2):
+    for row, data in enumerate(stock_data, 3):
         ws.cell(row=row, column=1, value=data.location_code)
         ws.cell(row=row, column=2, value=data.location_name)
         ws.cell(row=row, column=3, value=data.bin_code or '')
@@ -437,6 +444,181 @@ def export_low_stock_alerts():
     output.seek(0)
 
     filename = f"low_stock_alerts_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+    return send_file(output,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    as_attachment=True,
+                    download_name=filename)
+
+
+@bp.route('/scrap-parts')
+@login_required
+def scrap_parts():
+    """Scrap parts report with value calculation"""
+    start_date = request.args.get('start_date', '', type=str)
+    end_date = request.args.get('end_date', '', type=str)
+    location_filter = request.args.get('location', '', type=str)
+    reason_filter = request.args.get('reason', '', type=str)
+
+    # Query scrap data with calculated value
+    query = db.session.query(
+        Scrap,
+        Location.code.label('location_code'),
+        Location.name.label('location_name'),
+        Bin.bin_code,
+        Material.name.label('material_name'),
+        Item.name.label('item_name'),
+        func.sum(ScrapBatch.quantity_scrapped * ScrapBatch.cost_per_unit).label('scrap_value')
+    ).join(
+        Location, Scrap.location_id == Location.id
+    ).outerjoin(
+        Bin, Scrap.bin_id == Bin.id
+    ).outerjoin(
+        Material, Scrap.material_id == Material.id
+    ).outerjoin(
+        Item, Scrap.item_id == Item.id
+    ).outerjoin(
+        ScrapBatch, Scrap.id == ScrapBatch.scrap_id
+    )
+
+    # Apply filters
+    if start_date:
+        query = query.filter(Scrap.scrap_date >= start_date)
+    if end_date:
+        query = query.filter(Scrap.scrap_date <= end_date)
+    if location_filter:
+        query = query.filter(Location.code == location_filter)
+    if reason_filter:
+        query = query.filter(Scrap.reason == reason_filter)
+
+    scrap_data = query.group_by(
+        Scrap.id, Location.code, Location.name, Bin.bin_code, Material.name, Item.name
+    ).order_by(
+        Scrap.scrap_date.desc()
+    ).all()
+
+    # Calculate totals
+    total_quantity = sum(s.Scrap.quantity for s in scrap_data)
+    total_value = sum(s.scrap_value or 0 for s in scrap_data)
+    total_scraps = len(scrap_data)
+
+    # Get locations and reasons for filters
+    locations = Location.query.filter_by(active=True).order_by(Location.code).all()
+    scrap_reasons = ['damaged', 'expired', 'quality_issue', 'contaminated',
+                     'obsolete', 'production_defect', 'handling_damage', 'other']
+
+    return render_template('reports/scrap_parts.html',
+                          scrap_data=scrap_data,
+                          locations=locations,
+                          scrap_reasons=scrap_reasons,
+                          location_filter=location_filter,
+                          reason_filter=reason_filter,
+                          start_date=start_date,
+                          end_date=end_date,
+                          total_quantity=total_quantity,
+                          total_value=total_value,
+                          total_scraps=total_scraps,
+                          report_date=datetime.now())
+
+
+@bp.route('/scrap-parts/export')
+@login_required
+def export_scrap_parts():
+    """Export scrap parts report to Excel"""
+    start_date = request.args.get('start_date', '', type=str)
+    end_date = request.args.get('end_date', '', type=str)
+    location_filter = request.args.get('location', '', type=str)
+    reason_filter = request.args.get('reason', '', type=str)
+
+    # Same query as the report
+    query = db.session.query(
+        Scrap,
+        Location.code.label('location_code'),
+        Location.name.label('location_name'),
+        Bin.bin_code,
+        Material.name.label('material_name'),
+        Item.name.label('item_name'),
+        func.sum(ScrapBatch.quantity_scrapped * ScrapBatch.cost_per_unit).label('scrap_value')
+    ).join(
+        Location, Scrap.location_id == Location.id
+    ).outerjoin(
+        Bin, Scrap.bin_id == Bin.id
+    ).outerjoin(
+        Material, Scrap.material_id == Material.id
+    ).outerjoin(
+        Item, Scrap.item_id == Item.id
+    ).outerjoin(
+        ScrapBatch, Scrap.id == ScrapBatch.scrap_id
+    )
+
+    if start_date:
+        query = query.filter(Scrap.scrap_date >= start_date)
+    if end_date:
+        query = query.filter(Scrap.scrap_date <= end_date)
+    if location_filter:
+        query = query.filter(Location.code == location_filter)
+    if reason_filter:
+        query = query.filter(Scrap.reason == reason_filter)
+
+    scrap_data = query.group_by(
+        Scrap.id, Location.code, Location.name, Bin.bin_code, Material.name, Item.name
+    ).order_by(
+        Scrap.scrap_date.desc()
+    ).all()
+
+    # Create workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Scrap Parts Report"
+
+    # Report date header
+    ws.merge_cells('A1:H1')
+    date_cell = ws.cell(row=1, column=1, value=f"Scrap Parts Report - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    date_cell.font = Font(bold=True, size=14)
+    date_cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Header styling
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+
+    # Headers
+    headers = ['Scrap Number', 'Date', 'Material/Item', 'Location', 'Bin', 'Quantity', 'Reason', 'Value (€)']
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=2, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Data
+    for row, data in enumerate(scrap_data, 3):
+        ws.cell(row=row, column=1, value=data.Scrap.scrap_number)
+        ws.cell(row=row, column=2, value=data.Scrap.scrap_date.strftime('%Y-%m-%d %H:%M'))
+        ws.cell(row=row, column=3, value=data.material_name or data.item_name)
+        ws.cell(row=row, column=4, value=f"{data.location_code} - {data.location_name}")
+        ws.cell(row=row, column=5, value=data.bin_code or '-')
+        ws.cell(row=row, column=6, value=data.Scrap.quantity)
+        ws.cell(row=row, column=7, value=data.Scrap.reason)
+        ws.cell(row=row, column=8, value=float(data.scrap_value or 0))
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Save to BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"scrap_parts_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
 
     return send_file(output,
                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

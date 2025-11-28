@@ -100,6 +100,29 @@
             </div>
         </div>
     </div>
+
+    <!-- Scrap Parts Report -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-trash-alt"></i> Scrap Parts
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Comprehensive report of all scrapped parts with reasons, quantities, and FIFO-based value calculations.</p>
+                <ul class="list-unstyled mb-3">
+                    <li><i class="fas fa-check text-success me-2"></i> Scrap reasons breakdown</li>
+                    <li><i class="fas fa-check text-success me-2"></i> Date range filtering</li>
+                    <li><i class="fas fa-check text-success me-2"></i> Location filtering</li>
+                    <li><i class="fas fa-check text-success me-2"></i> Value lost calculation</li>
+                </ul>
+                <a href="{{ url_for('reports.scrap_parts') }}" class="btn btn-danger w-100">
+                    <i class="fas fa-eye"></i> View Report
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Quick Stats -->
