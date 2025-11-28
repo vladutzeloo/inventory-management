@@ -116,6 +116,7 @@ def new():
                 diameter=float(request.form.get('diameter')) if request.form.get('diameter') else None,
                 length=float(request.form.get('length')) if request.form.get('length') else None,
                 width=float(request.form.get('width')) if request.form.get('width') else None,
+                height=float(request.form.get('height')) if request.form.get('height') else None,
                 active=request.form.get('active') == 'on'
             )
 
@@ -164,6 +165,7 @@ def edit(id):
             item.diameter = float(request.form.get('diameter')) if request.form.get('diameter') else None
             item.length = float(request.form.get('length')) if request.form.get('length') else None
             item.width = float(request.form.get('width')) if request.form.get('width') else None
+            item.height = float(request.form.get('height')) if request.form.get('height') else None
             item.active = request.form.get('active') == 'on'
 
             db.session.commit()
@@ -218,7 +220,7 @@ def export():
 
     # Headers
     headers = ['Name', 'Description', 'Category', 'Unit of Measure',
-               'Reorder Level', 'Reorder Quantity', 'Active']
+               'Reorder Level', 'Reorder Quantity', 'Diameter', 'Length', 'Width', 'Height', 'Active']
     ws.append(headers)
 
     # Data
@@ -230,6 +232,10 @@ def export():
             item.unit_of_measure,
             item.reorder_level,
             item.reorder_quantity,
+            item.diameter if item.diameter else '',
+            item.length if item.length else '',
+            item.width if item.width else '',
+            item.height if item.height else '',
             'Yes' if item.active else 'No'
         ])
 

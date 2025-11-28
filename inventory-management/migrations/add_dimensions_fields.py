@@ -6,7 +6,7 @@ import sqlite3
 import os
 
 def migrate():
-    """Add diameter, length, and width fields to materials and items tables"""
+    """Add diameter, length, width, and height fields to materials and items tables"""
     db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'inventory.db')
 
     if not os.path.exists(db_path):
@@ -49,6 +49,13 @@ def migrate():
         else:
             print("  ✓ width already exists in materials")
 
+        if 'height' not in material_columns:
+            print("  Adding height to materials table...")
+            cursor.execute("ALTER TABLE materials ADD COLUMN height FLOAT")
+            print("  ✓ Added height to materials")
+        else:
+            print("  ✓ height already exists in materials")
+
         # Add dimension fields to items table
         print("\nUpdating items table...")
         if 'diameter' not in item_columns:
@@ -72,9 +79,16 @@ def migrate():
         else:
             print("  ✓ width already exists in items")
 
+        if 'height' not in item_columns:
+            print("  Adding height to items table...")
+            cursor.execute("ALTER TABLE items ADD COLUMN height FLOAT")
+            print("  ✓ Added height to items")
+        else:
+            print("  ✓ height already exists in items")
+
         conn.commit()
         print("\n✅ Migration completed successfully!")
-        print("   Dimension fields (diameter, length, width) have been added to materials and items tables.")
+        print("   Dimension fields (diameter, length, width, height) have been added to materials and items tables.")
 
     except Exception as e:
         conn.rollback()
