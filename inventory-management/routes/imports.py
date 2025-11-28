@@ -1,11 +1,12 @@
 """
 Excel Import routes - Bulk stock imports
 """
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from flask_login import login_required, current_user
 from models import db, Material, Item, Location, Bin, InventoryLevel, Batch, Category, Provider, Client
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from io import BytesIO
 import os
 
 bp = Blueprint('imports', __name__)
@@ -290,3 +291,60 @@ def upload():
         flash(f'Import failed: {str(e)}', 'danger')
 
     return redirect(url_for('imports.index'))
+
+
+@bp.route('/download-template')
+@login_required
+def download_template():
+    """Download Excel template for bulk stock import"""
+    try:
+        from openpyxl import Workbook
+    except ImportError:
+        flash('Excel export requires openpyxl library. Please install it: pip install openpyxl', 'danger')
+        return redirect(url_for('imports.index'))
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Stock Import Template"
+
+    # Headers
+    headers = ['Type', 'Name', 'Category', 'Provider/Client', 'Location', 'Bin',
+               'Quantity', 'UOM', 'Cost', 'Diameter', 'Width', 'Length', 'Height']
+    ws.append(headers)
+
+    # Sample data - Material examples
+    ws.append(['material', 'Steel Plate 5mm', 'Metals', 'ABC Steel Co', 'WH-01', 'A-01',
+               150, 'KG', 25.50, '', 1000, 2000, 5])
+    ws.append(['material', 'Copper Wire 2.5mm', 'Metals', 'XYZ Suppliers', 'WH-01', 'B-03',
+               500, 'M', 2.30, 2.5, '', '', ''])
+    ws.append(['material', 'Aluminum Rod 10mm', 'Metals', 'ABC Steel Co', 'WH-01', 'A-02',
+               200, 'PCS', 15.00, 10, '', 3000, ''])
+
+    # Sample data - Item examples
+    ws.append(['item', 'Widget A1000', 'Electronics', 'ClientCo Inc', 'WH-02', 'C-05',
+               100, 'PCS', 150.00, '', 50, 100, 30])
+    ws.append(['item', 'Assembly B2000', 'Assemblies', 'TechCorp Ltd', 'WH-02', 'C-06',
+               50, 'SET', 299.99, '', 200, 150, 75])
+
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if cell.value and len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Save to BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(output,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    as_attachment=True,
+                    download_name='stock_import_template.xlsx')
