@@ -3,9 +3,9 @@ Dashboard routes
 """
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from models import db, Material, Item, Location, Batch, InventoryLevel, Receipt, Transfer, Scrap, ScrapBatch
+from models import db, Material, Item, Location, Batch, InventoryLevel, Scrap, ScrapBatch
 from sqlalchemy import func, case
-from datetime import datetime, timedelta
+from datetime import datetime
 
 bp = Blueprint('dashboard', __name__)
 
@@ -104,66 +104,6 @@ def index():
         Batch.received_date.desc()
     ).limit(10).all()
 
-    # Activity Trends - Last 30 days
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    activity_data = []
-    for i in range(30):
-        date = thirty_days_ago + timedelta(days=i)
-        date_str = date.strftime('%Y-%m-%d')
-
-        receipts_count = Receipt.query.filter(
-            func.date(Receipt.receipt_date) == date.date()
-        ).count()
-
-        transfers_count = Transfer.query.filter(
-            func.date(Transfer.transfer_date) == date.date()
-        ).count()
-
-        scraps_count = Scrap.query.filter(
-            func.date(Scrap.scrap_date) == date.date()
-        ).count()
-
-        activity_data.append({
-            'date': date_str,
-            'receipts': receipts_count,
-            'transfers': transfers_count,
-            'scraps': scraps_count
-        })
-
-    # Stock Health Status
-    critical_materials = db.session.query(
-        Material
-    ).outerjoin(
-        InventoryLevel, Material.id == InventoryLevel.material_id
-    ).filter(
-        Material.active == True
-    ).group_by(
-        Material.id
-    ).having(
-        func.coalesce(func.sum(InventoryLevel.quantity), 0) == 0
-    ).count()
-
-    critical_items = db.session.query(
-        Item
-    ).outerjoin(
-        InventoryLevel, Item.id == InventoryLevel.item_id
-    ).filter(
-        Item.active == True
-    ).group_by(
-        Item.id
-    ).having(
-        func.coalesce(func.sum(InventoryLevel.quantity), 0) == 0
-    ).count()
-
-    low_materials = len(low_stock_materials)
-    low_items = len(low_stock_items)
-
-    stock_health = {
-        'critical': critical_materials + critical_items,
-        'low': low_materials + low_items,
-        'normal': (total_materials - critical_materials - low_materials) + (total_items - critical_items - low_items)
-    }
-
     return render_template('dashboard/index.html',
                           total_materials=total_materials,
                           total_items=total_items,
@@ -176,6 +116,4 @@ def index():
                           low_stock_materials=low_stock_materials,
                           low_stock_items=low_stock_items,
                           inventory_by_location=inventory_by_location,
-                          recent_batches=recent_batches,
-                          activity_data=activity_data,
-                          stock_health=stock_health)
+                          recent_batches=recent_batches)
