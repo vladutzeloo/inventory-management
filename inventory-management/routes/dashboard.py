@@ -3,7 +3,7 @@ Dashboard routes
 """
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from models import db, Material, Item, Location, Batch, InventoryLevel, Receipt, Transfer, Scrap
+from models import db, Material, Item, Location, Batch, InventoryLevel, Receipt, Transfer, Scrap, ScrapBatch
 from sqlalchemy import func, case
 from datetime import datetime, timedelta
 
@@ -31,6 +31,15 @@ def index():
     # Total quantity
     total_quantity = db.session.query(
         func.sum(InventoryLevel.quantity)
+    ).scalar() or 0
+
+    # Scrap value and count
+    scrap_value = db.session.query(
+        func.sum(ScrapBatch.quantity_scrapped * ScrapBatch.cost_per_unit)
+    ).scalar() or 0
+
+    scrap_parts_count = db.session.query(
+        func.count(Scrap.id)
     ).scalar() or 0
 
     # Low stock alerts - materials below reorder level
@@ -161,6 +170,8 @@ def index():
                           total_locations=total_locations,
                           total_value=total_value,
                           total_quantity=total_quantity,
+                          scrap_value=scrap_value,
+                          scrap_parts_count=scrap_parts_count,
                           low_stock_count=low_stock_count,
                           low_stock_materials=low_stock_materials,
                           low_stock_items=low_stock_items,

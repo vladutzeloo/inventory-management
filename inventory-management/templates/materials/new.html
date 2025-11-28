@@ -105,6 +105,8 @@
                                 <option value="LT">LT - Liters</option>
                                 <option value="GAL">GAL - Gallons</option>
                                 <option value="M">M - Meters</option>
+                                <option value="CM">CM - Centimeters</option>
+                                <option value="MM">MM - Millimeters</option>
                                 <option value="FT">FT - Feet</option>
                                 <option value="SQM">SQM - Square Meters</option>
                                 <option value="SQFT">SQFT - Square Feet</option>
@@ -146,6 +148,59 @@
                                    step="0.01"
                                    value="0">
                             <div class="form-text">Suggested quantity to reorder</div>
+                        </div>
+                    </div>
+
+                    <!-- Dimensions -->
+                    <div class="row">
+                        <div class="col-12 mb-2">
+                            <h6 class="text-primary"><i class="fas fa-ruler-combined"></i> Dimensions (Optional)</h6>
+                            <small class="text-muted">Specify dimensions if applicable</small>
+                        </div>
+
+                        <!-- Diameter -->
+                        <div class="col-md-4 mb-3">
+                            <label for="diameter" class="form-label">
+                                <i class="fas fa-circle-notch"></i> Diameter
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="diameter"
+                                   name="diameter"
+                                   placeholder="0"
+                                   min="0"
+                                   step="0.01">
+                            <div class="form-text">Diameter (in UOM units)</div>
+                        </div>
+
+                        <!-- Length -->
+                        <div class="col-md-4 mb-3">
+                            <label for="length" class="form-label">
+                                <i class="fas fa-arrows-alt-h"></i> Length
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="length"
+                                   name="length"
+                                   placeholder="0"
+                                   min="0"
+                                   step="0.01">
+                            <div class="form-text">Length (in UOM units)</div>
+                        </div>
+
+                        <!-- Width -->
+                        <div class="col-md-4 mb-3">
+                            <label for="width" class="form-label">
+                                <i class="fas fa-arrows-alt-v"></i> Width
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="width"
+                                   name="width"
+                                   placeholder="0"
+                                   min="0"
+                                   step="0.01">
+                            <div class="form-text">Width (in UOM units)</div>
                         </div>
                     </div>
 

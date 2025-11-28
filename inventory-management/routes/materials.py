@@ -113,6 +113,9 @@ def new():
                 unit_of_measure=request.form['unit_of_measure'].strip(),
                 reorder_level=float(request.form.get('reorder_level', 0)),
                 reorder_quantity=float(request.form.get('reorder_quantity', 0)),
+                diameter=float(request.form.get('diameter')) if request.form.get('diameter') else None,
+                length=float(request.form.get('length')) if request.form.get('length') else None,
+                width=float(request.form.get('width')) if request.form.get('width') else None,
                 active=request.form.get('active') == 'on'
             )
 
@@ -158,6 +161,9 @@ def edit(id):
             material.unit_of_measure = request.form['unit_of_measure'].strip()
             material.reorder_level = float(request.form.get('reorder_level', 0))
             material.reorder_quantity = float(request.form.get('reorder_quantity', 0))
+            material.diameter = float(request.form.get('diameter')) if request.form.get('diameter') else None
+            material.length = float(request.form.get('length')) if request.form.get('length') else None
+            material.width = float(request.form.get('width')) if request.form.get('width') else None
             material.active = request.form.get('active') == 'on'
 
             db.session.commit()
