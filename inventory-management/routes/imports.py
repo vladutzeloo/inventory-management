@@ -69,7 +69,7 @@ def upload():
                 if not row or all(cell is None for cell in row):
                     continue  # Skip empty rows
 
-                # Expected columns: Type, Name, Category, Provider/Client, Location, Bin, Quantity, UOM, Cost
+                # Expected columns: Type, Name, Category, Provider/Client, Location, Bin, Quantity, UOM, Cost, Diameter, Width, Length, Height
                 item_type = str(row[0]).strip().lower() if row[0] else None
                 name = str(row[1]).strip() if row[1] else None
                 category_name = str(row[2]).strip() if row[2] else None
@@ -79,6 +79,10 @@ def upload():
                 quantity = float(row[6]) if row[6] else 0
                 uom = str(row[7]).strip() if row[7] else 'PCS'
                 cost = float(row[8]) if row[8] else 0
+                diameter = float(row[9]) if row[9] and str(row[9]).strip() else None
+                width = float(row[10]) if row[10] and str(row[10]).strip() else None
+                length = float(row[11]) if row[11] and str(row[11]).strip() else None
+                height = float(row[12]) if row[12] and str(row[12]).strip() else None
 
                 if not item_type or not name or not location_code:
                     results['errors'].append(f'Row {row_num}: Missing required fields (Type, Name, or Location)')
@@ -134,11 +138,25 @@ def upload():
                             unit_of_measure=uom,
                             category_id=category.id if category else None,
                             provider_id=provider.id if provider else None,
+                            diameter=diameter,
+                            width=width,
+                            length=length,
+                            height=height,
                             active=True
                         )
                         db.session.add(material)
                         db.session.flush()
                         results['created_materials'] += 1
+                    else:
+                        # Update dimensions if material exists
+                        if diameter is not None:
+                            material.diameter = diameter
+                        if width is not None:
+                            material.width = width
+                        if length is not None:
+                            material.length = length
+                        if height is not None:
+                            material.height = height
 
                     # Create batch
                     batch = Batch(
@@ -194,11 +212,25 @@ def upload():
                             unit_of_measure=uom,
                             category_id=category.id if category else None,
                             client_id=client.id if client else None,
+                            diameter=diameter,
+                            width=width,
+                            length=length,
+                            height=height,
                             active=True
                         )
                         db.session.add(item)
                         db.session.flush()
                         results['created_items'] += 1
+                    else:
+                        # Update dimensions if item exists
+                        if diameter is not None:
+                            item.diameter = diameter
+                        if width is not None:
+                            item.width = width
+                        if length is not None:
+                            item.length = length
+                        if height is not None:
+                            item.height = height
 
                     # Create batch
                     batch = Batch(
