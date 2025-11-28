@@ -27,6 +27,7 @@ class Material(db.Model):
     diameter = db.Column(db.Float, nullable=True)  # Diameter in specified UOM
     length = db.Column(db.Float, nullable=True)    # Length in specified UOM
     width = db.Column(db.Float, nullable=True)     # Width in specified UOM
+    height = db.Column(db.Float, nullable=True)    # Height in specified UOM
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -72,6 +73,7 @@ class Item(db.Model):
     diameter = db.Column(db.Float, nullable=True)  # Diameter in specified UOM
     length = db.Column(db.Float, nullable=True)    # Length in specified UOM
     width = db.Column(db.Float, nullable=True)     # Width in specified UOM
+    height = db.Column(db.Float, nullable=True)    # Height in specified UOM
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
