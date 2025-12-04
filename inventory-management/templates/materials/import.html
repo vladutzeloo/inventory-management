@@ -149,6 +149,51 @@
                                 <td>Yes/No or True/False</td>
                                 <td>Yes</td>
                             </tr>
+                            <tr class="table-info">
+                                <td colspan="4"><strong><i class="fas fa-box"></i> Batch Information (Optional - all batch fields required if creating a batch)</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Batch Number</strong></td>
+                                <td><span class="badge bg-warning text-dark">Batch*</span></td>
+                                <td>Unique batch identifier</td>
+                                <td>BATCH-2025-001</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Supplier Batch Number</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Supplier's batch reference</td>
+                                <td>SUP-12345</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Location Code</strong></td>
+                                <td><span class="badge bg-warning text-dark">Batch*</span></td>
+                                <td>Storage location code</td>
+                                <td>WH-001</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Bin Code</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Bin location within warehouse</td>
+                                <td>A-01</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Quantity</strong></td>
+                                <td><span class="badge bg-warning text-dark">Batch*</span></td>
+                                <td>Batch quantity</td>
+                                <td>500</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cost per Unit</strong></td>
+                                <td><span class="badge bg-warning text-dark">Batch*</span></td>
+                                <td>Cost per unit in batch</td>
+                                <td>25.50</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Received Date</strong></td>
+                                <td><span class="badge bg-secondary">No</span></td>
+                                <td>Date batch was received (YYYY-MM-DD)</td>
+                                <td>2025-01-15</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -170,6 +215,19 @@
                     </li>
                     <li>
                         <strong>New Materials:</strong> Materials that don't exist will be created as new entries.
+                    </li>
+                    <li>
+                        <strong>Batch Creation:</strong> To create a batch during import, you must provide:
+                        Batch Number, Location Code, Quantity, and Cost per Unit. The batch will only be created
+                        if it doesn't already exist and the location is valid.
+                    </li>
+                    <li>
+                        <strong>Duplicate Batches:</strong> If a batch with the same batch number already exists,
+                        it will be skipped to prevent duplicates.
+                    </li>
+                    <li>
+                        <strong>Location Validation:</strong> The Location Code and Bin Code must exist in your system
+                        before importing. Invalid locations will cause the batch creation to be skipped.
                     </li>
                     <li>
                         <strong>Data Validation:</strong> The system will validate all data. Rows with errors will be skipped
