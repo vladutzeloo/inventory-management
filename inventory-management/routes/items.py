@@ -3,7 +3,7 @@ Items master data management routes
 """
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from flask_login import login_required, current_user
-from models import db, Item, InventoryLevel, Category, Client
+from models import db, Item, InventoryLevel, Category, Client, Batch, Location, Bin
 from sqlalchemy import func, or_
 from openpyxl import Workbook, load_workbook
 from io import BytesIO
@@ -307,6 +307,15 @@ def import_data():
                     reorder_quantity = float(row[5] or 0)
                     active = str(row[6] or 'Yes').lower() in ['yes', 'true', '1', 'active']
 
+                    # Batch information (optional)
+                    batch_number = str(row[7]).strip() if len(row) > 7 and row[7] else None
+                    internal_order_number = str(row[8]).strip() if len(row) > 8 and row[8] else None
+                    location_code = str(row[9]).strip() if len(row) > 9 and row[9] else None
+                    bin_code = str(row[10]).strip() if len(row) > 10 and row[10] else None
+                    quantity = float(row[11]) if len(row) > 11 and row[11] else None
+                    cost_per_unit = float(row[12]) if len(row) > 12 and row[12] else None
+                    received_date_str = str(row[13]).strip() if len(row) > 13 and row[13] else None
+
                     # Check if item exists
                     item = Item.query.filter_by(name=name).first()
 
@@ -332,6 +341,75 @@ def import_data():
                         )
                         db.session.add(item)
                         imported += 1
+
+                    # Flush to get item ID for batch creation
+                    db.session.flush()
+
+                    # Create batch if batch information is provided
+                    if batch_number and location_code and quantity and cost_per_unit:
+                        # Find location
+                        location = Location.query.filter_by(code=location_code).first()
+                        if not location:
+                            errors.append(f"Row {idx}: Location '{location_code}' not found")
+                            continue
+
+                        # Find bin if provided
+                        bin_obj = None
+                        if bin_code:
+                            bin_obj = Bin.query.filter_by(location_id=location.id, bin_code=bin_code).first()
+                            if not bin_obj:
+                                errors.append(f"Row {idx}: Bin '{bin_code}' not found in location '{location_code}'")
+                                continue
+
+                        # Parse received date
+                        received_date = datetime.utcnow()
+                        if received_date_str:
+                            try:
+                                # Try different date formats
+                                for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%Y/%m/%d']:
+                                    try:
+                                        received_date = datetime.strptime(received_date_str, fmt)
+                                        break
+                                    except ValueError:
+                                        continue
+                            except:
+                                pass  # Use default date if parsing fails
+
+                        # Check if batch already exists
+                        existing_batch = Batch.query.filter_by(batch_number=batch_number).first()
+                        if not existing_batch:
+                            # Create new batch
+                            batch = Batch(
+                                batch_number=batch_number,
+                                item_id=item.id,
+                                location_id=location.id,
+                                bin_id=bin_obj.id if bin_obj else None,
+                                quantity_original=quantity,
+                                quantity_available=quantity,
+                                cost_per_unit=cost_per_unit,
+                                po_number=internal_order_number,  # Using po_number for internal order number
+                                received_date=received_date,
+                                status='active'
+                            )
+                            db.session.add(batch)
+
+                            # Update inventory level
+                            inventory = InventoryLevel.query.filter_by(
+                                item_id=item.id,
+                                location_id=location.id,
+                                bin_id=bin_obj.id if bin_obj else None
+                            ).first()
+
+                            if inventory:
+                                inventory.quantity += quantity
+                            else:
+                                inventory = InventoryLevel(
+                                    item_id=item.id,
+                                    location_id=location.id,
+                                    bin_id=bin_obj.id if bin_obj else None,
+                                    quantity=quantity
+                                )
+                                db.session.add(inventory)
 
                 except Exception as e:
                     errors.append(f"Row {idx}: {str(e)}")
@@ -362,12 +440,16 @@ def download_template():
 
     # Headers
     headers = ['Name', 'Description', 'Category', 'Unit of Measure',
-               'Reorder Level', 'Reorder Quantity', 'Active']
+               'Reorder Level', 'Reorder Quantity', 'Active', 'Batch Number',
+               'Internal Order Number', 'Location Code', 'Bin Code', 'Quantity',
+               'Cost per Unit', 'Received Date']
     ws.append(headers)
 
     # Sample data
-    ws.append(['Widget A', 'Standard widget model A', 'Finished Goods', 'PCS', 50, 100, 'Yes'])
-    ws.append(['Assembly B', 'Complete assembly model B', 'Assemblies', 'PCS', 25, 50, 'Yes'])
+    ws.append(['Widget A', 'Standard widget model A', 'Finished Goods', 'PCS', 50, 100, 'Yes',
+               'BATCH-FG-001', 'IO-2025-001', 'WH-001', 'FG-01', 100, 45.00, '2025-01-15'])
+    ws.append(['Assembly B', 'Complete assembly model B', 'Assemblies', 'PCS', 25, 50, 'Yes',
+               'BATCH-FG-002', 'IO-2025-002', 'WH-001', 'FG-02', 75, 125.50, '2025-01-16'])
 
     # Auto-adjust column widths
     for column in ws.columns:
