@@ -70,24 +70,72 @@ def upload():
                 if not row or all(cell is None for cell in row):
                     continue  # Skip empty rows
 
-                # Expected columns: Type, Name, Category, Provider/Client, Location, Bin, Quantity, UOM, Cost, Diameter, Width, Length, Height
+                # Expected columns: Type, Name, Category, Provider/Client, Location, Bin, Quantity, UOM, Cost, Batch Number, Supplier Batch/IO Number, Diameter, Width, Length, Height
                 item_type = str(row[0]).strip().lower() if row[0] else None
                 name = str(row[1]).strip() if row[1] else None
                 category_name = str(row[2]).strip() if row[2] else None
                 org_name = str(row[3]).strip() if row[3] else None  # Provider for materials, Client for items
                 location_code = str(row[4]).strip().upper() if row[4] else None
                 bin_code = str(row[5]).strip().upper() if row[5] else None
-                quantity = float(row[6]) if row[6] else 0
+
+                # Safe float conversion for quantity
+                quantity = 0
+                if row[6] not in [None, '']:
+                    try:
+                        quantity = float(row[6])
+                    except (ValueError, TypeError):
+                        quantity = 0
+
                 uom = str(row[7]).strip() if row[7] else 'PCS'
-                cost = float(row[8]) if row[8] else 0
-                diameter = float(row[9]) if row[9] and str(row[9]).strip() else None
-                width = float(row[10]) if row[10] and str(row[10]).strip() else None
-                length = float(row[11]) if row[11] and str(row[11]).strip() else None
-                height = float(row[12]) if row[12] and str(row[12]).strip() else None
+
+                # Safe float conversion for cost
+                cost = 0
+                if row[8] not in [None, '']:
+                    try:
+                        cost = float(row[8])
+                    except (ValueError, TypeError):
+                        cost = 0
+
+                # NEW: Batch information
+                batch_number = str(row[9]).strip() if row[9] not in [None, ''] else None
+                supplier_batch_or_io = str(row[10]).strip() if row[10] not in [None, ''] else None  # Supplier batch for materials, IO number for items
+
+                # Safe float conversion for dimensions
+                diameter = None
+                if len(row) > 11 and row[11] not in [None, '']:
+                    try:
+                        diameter = float(row[11])
+                    except (ValueError, TypeError):
+                        pass
+
+                width = None
+                if len(row) > 12 and row[12] not in [None, '']:
+                    try:
+                        width = float(row[12])
+                    except (ValueError, TypeError):
+                        pass
+
+                length = None
+                if len(row) > 13 and row[13] not in [None, '']:
+                    try:
+                        length = float(row[13])
+                    except (ValueError, TypeError):
+                        pass
+
+                height = None
+                if len(row) > 14 and row[14] not in [None, '']:
+                    try:
+                        height = float(row[14])
+                    except (ValueError, TypeError):
+                        pass
 
                 if not item_type or not name or not location_code:
                     results['errors'].append(f'Row {row_num}: Missing required fields (Type, Name, or Location)')
                     continue
+
+                # Generate batch number if not provided
+                if not batch_number:
+                    batch_number = f"BATCH-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{row_num}"
 
                 # Get or create category
                 category = None
@@ -159,14 +207,16 @@ def upload():
                         if height is not None:
                             material.height = height
 
-                    # Create batch
+                    # Create batch with batch number
                     batch = Batch(
+                        batch_number=batch_number,
                         material_id=material.id,
                         location_id=location.id,
                         bin_id=bin_obj.id if bin_obj else None,
-                        quantity_received=quantity,
+                        quantity_original=quantity,
                         quantity_available=quantity,
                         cost_per_unit=cost,
+                        supplier_batch_number=supplier_batch_or_io,
                         received_date=datetime.utcnow(),
                         status='active'
                     )
@@ -233,14 +283,16 @@ def upload():
                         if height is not None:
                             item.height = height
 
-                    # Create batch
+                    # Create batch with batch number
                     batch = Batch(
+                        batch_number=batch_number,
                         item_id=item.id,
                         location_id=location.id,
                         bin_id=bin_obj.id if bin_obj else None,
-                        quantity_received=quantity,
+                        quantity_original=quantity,
                         quantity_available=quantity,
                         cost_per_unit=cost,
+                        po_number=supplier_batch_or_io,  # Internal order number for items
                         received_date=datetime.utcnow(),
                         status='active'
                     )
@@ -309,22 +361,23 @@ def download_template():
 
     # Headers
     headers = ['Type', 'Name', 'Category', 'Provider/Client', 'Location', 'Bin',
-               'Quantity', 'UOM', 'Cost', 'Diameter', 'Width', 'Length', 'Height']
+               'Quantity', 'UOM', 'Cost', 'Batch Number', 'Supplier Batch/IO Number',
+               'Diameter', 'Width', 'Length', 'Height']
     ws.append(headers)
 
     # Sample data - Material examples
     ws.append(['material', 'Steel Plate 5mm', 'Metals', 'ABC Steel Co', 'WH-01', 'A-01',
-               150, 'KG', 25.50, '', 1000, 2000, 5])
+               150, 'KG', 25.50, 'BATCH-MAT-001', 'SUP-12345', '', 1000, 2000, 5])
     ws.append(['material', 'Copper Wire 2.5mm', 'Metals', 'XYZ Suppliers', 'WH-01', 'B-03',
-               500, 'M', 2.30, 2.5, '', '', ''])
+               500, 'M', 2.30, 'BATCH-MAT-002', 'SUP-67890', 2.5, '', '', ''])
     ws.append(['material', 'Aluminum Rod 10mm', 'Metals', 'ABC Steel Co', 'WH-01', 'A-02',
-               200, 'PCS', 15.00, 10, '', 3000, ''])
+               200, 'PCS', 15.00, 'BATCH-MAT-003', 'SUP-11111', 10, '', 3000, ''])
 
     # Sample data - Item examples
     ws.append(['item', 'Widget A1000', 'Electronics', 'ClientCo Inc', 'WH-02', 'C-05',
-               100, 'PCS', 150.00, '', 50, 100, 30])
+               100, 'PCS', 150.00, 'BATCH-FG-001', 'IO-2025-001', '', 50, 100, 30])
     ws.append(['item', 'Assembly B2000', 'Assemblies', 'TechCorp Ltd', 'WH-02', 'C-06',
-               50, 'SET', 299.99, '', 200, 150, 75])
+               50, 'SET', 299.99, 'BATCH-FG-002', 'IO-2025-002', '', 200, 150, 75])
 
     # Auto-adjust column widths
     for column in ws.columns:
