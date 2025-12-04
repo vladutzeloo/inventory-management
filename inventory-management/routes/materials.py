@@ -3,7 +3,7 @@ Materials master data management routes
 """
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from flask_login import login_required, current_user
-from models import db, Material, InventoryLevel, Category, Provider
+from models import db, Material, InventoryLevel, Category, Provider, Batch, Location, Bin
 from sqlalchemy import func, or_
 from openpyxl import Workbook, load_workbook
 from io import BytesIO
@@ -211,7 +211,7 @@ def delete(id):
 @bp.route('/export')
 @login_required
 def export():
-    """Export materials to Excel"""
+    """Export materials to Excel with batch information"""
     materials = Material.query.order_by(Material.name).all()
 
     wb = Workbook()
@@ -220,12 +220,21 @@ def export():
 
     # Headers
     headers = ['Name', 'Description', 'Category', 'Unit of Measure',
-               'Reorder Level', 'Reorder Quantity', 'Diameter', 'Length', 'Width', 'Height', 'Active']
+               'Reorder Level', 'Reorder Quantity', 'Diameter', 'Length', 'Width', 'Height', 'Active',
+               'Batch Number', 'Supplier Batch Number', 'Location Code', 'Bin Code',
+               'Quantity', 'Cost per Unit', 'Received Date']
     ws.append(headers)
 
     # Data
     for material in materials:
-        ws.append([
+        # Get first active batch for this material (if exists)
+        batch = Batch.query.filter_by(
+            material_id=material.id,
+            status='active'
+        ).order_by(Batch.received_date.desc()).first()
+
+        # Base material data
+        row_data = [
             material.name,
             material.description,
             material.category,
@@ -237,7 +246,26 @@ def export():
             material.width if material.width else '',
             material.height if material.height else '',
             'Yes' if material.active else 'No'
-        ])
+        ]
+
+        # Add batch data if available
+        if batch:
+            location = Location.query.get(batch.location_id)
+            bin_obj = Bin.query.get(batch.bin_id) if batch.bin_id else None
+            row_data.extend([
+                batch.batch_number,
+                batch.supplier_batch_number or '',
+                location.code if location else '',
+                bin_obj.bin_code if bin_obj else '',
+                batch.quantity_available,
+                float(batch.cost_per_unit),
+                batch.received_date.strftime('%Y-%m-%d') if batch.received_date else ''
+            ])
+        else:
+            # Empty batch columns
+            row_data.extend(['', '', '', '', '', '', ''])
+
+        ws.append(row_data)
 
     # Auto-adjust column widths
     for column in ws.columns:
@@ -307,6 +335,15 @@ def import_data():
                     reorder_quantity = float(row[5] or 0)
                     active = str(row[6] or 'Yes').lower() in ['yes', 'true', '1', 'active']
 
+                    # Batch information (optional)
+                    batch_number = str(row[7]).strip() if len(row) > 7 and row[7] else None
+                    supplier_batch_number = str(row[8]).strip() if len(row) > 8 and row[8] else None
+                    location_code = str(row[9]).strip() if len(row) > 9 and row[9] else None
+                    bin_code = str(row[10]).strip() if len(row) > 10 and row[10] else None
+                    quantity = float(row[11]) if len(row) > 11 and row[11] else None
+                    cost_per_unit = float(row[12]) if len(row) > 12 and row[12] else None
+                    received_date_str = str(row[13]).strip() if len(row) > 13 and row[13] else None
+
                     # Check if material exists
                     material = Material.query.filter_by(name=name).first()
 
@@ -332,6 +369,75 @@ def import_data():
                         )
                         db.session.add(material)
                         imported += 1
+
+                    # Flush to get material ID for batch creation
+                    db.session.flush()
+
+                    # Create batch if batch information is provided
+                    if batch_number and location_code and quantity and cost_per_unit:
+                        # Find location
+                        location = Location.query.filter_by(code=location_code).first()
+                        if not location:
+                            errors.append(f"Row {idx}: Location '{location_code}' not found")
+                            continue
+
+                        # Find bin if provided
+                        bin_obj = None
+                        if bin_code:
+                            bin_obj = Bin.query.filter_by(location_id=location.id, bin_code=bin_code).first()
+                            if not bin_obj:
+                                errors.append(f"Row {idx}: Bin '{bin_code}' not found in location '{location_code}'")
+                                continue
+
+                        # Parse received date
+                        received_date = datetime.utcnow()
+                        if received_date_str:
+                            try:
+                                # Try different date formats
+                                for fmt in ['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%Y/%m/%d']:
+                                    try:
+                                        received_date = datetime.strptime(received_date_str, fmt)
+                                        break
+                                    except ValueError:
+                                        continue
+                            except:
+                                pass  # Use default date if parsing fails
+
+                        # Check if batch already exists
+                        existing_batch = Batch.query.filter_by(batch_number=batch_number).first()
+                        if not existing_batch:
+                            # Create new batch
+                            batch = Batch(
+                                batch_number=batch_number,
+                                material_id=material.id,
+                                location_id=location.id,
+                                bin_id=bin_obj.id if bin_obj else None,
+                                quantity_original=quantity,
+                                quantity_available=quantity,
+                                cost_per_unit=cost_per_unit,
+                                supplier_batch_number=supplier_batch_number,
+                                received_date=received_date,
+                                status='active'
+                            )
+                            db.session.add(batch)
+
+                            # Update inventory level
+                            inventory = InventoryLevel.query.filter_by(
+                                material_id=material.id,
+                                location_id=location.id,
+                                bin_id=bin_obj.id if bin_obj else None
+                            ).first()
+
+                            if inventory:
+                                inventory.quantity += quantity
+                            else:
+                                inventory = InventoryLevel(
+                                    material_id=material.id,
+                                    location_id=location.id,
+                                    bin_id=bin_obj.id if bin_obj else None,
+                                    quantity=quantity
+                                )
+                                db.session.add(inventory)
 
                 except Exception as e:
                     errors.append(f"Row {idx}: {str(e)}")
@@ -362,12 +468,16 @@ def download_template():
 
     # Headers
     headers = ['Name', 'Description', 'Category', 'Unit of Measure',
-               'Reorder Level', 'Reorder Quantity', 'Active']
+               'Reorder Level', 'Reorder Quantity', 'Active', 'Batch Number',
+               'Supplier Batch Number', 'Location Code', 'Bin Code', 'Quantity',
+               'Cost per Unit', 'Received Date']
     ws.append(headers)
 
     # Sample data
-    ws.append(['Steel Plate 10mm', 'Steel plate 10mm thickness', 'Metals', 'PCS', 100, 200, 'Yes'])
-    ws.append(['Plastic Resin', 'High-density plastic resin', 'Plastics', 'KG', 500, 1000, 'Yes'])
+    ws.append(['Steel Plate 10mm', 'Steel plate 10mm thickness', 'Metals', 'PCS', 100, 200, 'Yes',
+               'BATCH-2025-001', 'SUP-12345', 'WH-001', 'A-01', 500, 25.50, '2025-01-15'])
+    ws.append(['Plastic Resin', 'High-density plastic resin', 'Plastics', 'KG', 500, 1000, 'Yes',
+               'BATCH-2025-002', 'SUP-67890', 'WH-001', 'B-02', 1500, 12.75, '2025-01-16'])
 
     # Auto-adjust column widths
     for column in ws.columns:
