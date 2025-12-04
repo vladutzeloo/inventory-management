@@ -331,18 +331,42 @@ def import_data():
                     description = str(row[1] or '').strip()
                     category = str(row[2] or '').strip()
                     unit_of_measure = str(row[3] or 'PCS').strip()
-                    reorder_level = float(row[4] or 0)
-                    reorder_quantity = float(row[5] or 0)
+
+                    # Safe float conversion
+                    try:
+                        reorder_level = float(row[4]) if row[4] not in [None, ''] else 0
+                    except (ValueError, TypeError):
+                        reorder_level = 0
+
+                    try:
+                        reorder_quantity = float(row[5]) if row[5] not in [None, ''] else 0
+                    except (ValueError, TypeError):
+                        reorder_quantity = 0
+
                     active = str(row[6] or 'Yes').lower() in ['yes', 'true', '1', 'active']
 
                     # Batch information (optional)
-                    batch_number = str(row[7]).strip() if len(row) > 7 and row[7] else None
-                    supplier_batch_number = str(row[8]).strip() if len(row) > 8 and row[8] else None
-                    location_code = str(row[9]).strip() if len(row) > 9 and row[9] else None
-                    bin_code = str(row[10]).strip() if len(row) > 10 and row[10] else None
-                    quantity = float(row[11]) if len(row) > 11 and row[11] else None
-                    cost_per_unit = float(row[12]) if len(row) > 12 and row[12] else None
-                    received_date_str = str(row[13]).strip() if len(row) > 13 and row[13] else None
+                    batch_number = str(row[7]).strip() if len(row) > 7 and row[7] not in [None, ''] else None
+                    supplier_batch_number = str(row[8]).strip() if len(row) > 8 and row[8] not in [None, ''] else None
+                    location_code = str(row[9]).strip() if len(row) > 9 and row[9] not in [None, ''] else None
+                    bin_code = str(row[10]).strip() if len(row) > 10 and row[10] not in [None, ''] else None
+
+                    # Safe float conversion for batch quantity and cost
+                    quantity = None
+                    if len(row) > 11 and row[11] not in [None, '']:
+                        try:
+                            quantity = float(row[11])
+                        except (ValueError, TypeError):
+                            pass
+
+                    cost_per_unit = None
+                    if len(row) > 12 and row[12] not in [None, '']:
+                        try:
+                            cost_per_unit = float(row[12])
+                        except (ValueError, TypeError):
+                            pass
+
+                    received_date_str = str(row[13]).strip() if len(row) > 13 and row[13] not in [None, ''] else None
 
                     # Check if material exists
                     material = Material.query.filter_by(name=name).first()
