@@ -138,9 +138,17 @@ def upload():
                     results['errors'].append(f'Row {row_num}: Missing required fields (Type, Name, or Location)')
                     continue
 
+                # Validate and generate batch number
+                # Check if user mistakenly put ownership type in batch number column
+                if batch_number and batch_number.upper() in ['OWNED', 'LOHN']:
+                    results['errors'].append(f'Row {row_num}: Batch Number cannot be just "{batch_number}". Auto-generating instead.')
+                    batch_number = None
+
                 # Generate batch number if not provided, with ownership prefix
                 if not batch_number:
-                    batch_number = f"{ownership_type}-BATCH-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{row_num}"
+                    # Use microseconds for uniqueness
+                    timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
+                    batch_number = f"{ownership_type}-BATCH-{timestamp}-{row_num}"
                 else:
                     # Add ownership prefix if not already present
                     if not batch_number.startswith(('OWNED-', 'LOHN-')):
@@ -216,20 +224,27 @@ def upload():
                         if height is not None:
                             material.height = height
 
-                    # Create batch with batch number
-                    batch = Batch(
-                        batch_number=batch_number,
-                        material_id=material.id,
-                        location_id=location.id,
-                        bin_id=bin_obj.id if bin_obj else None,
-                        quantity_original=quantity,
-                        quantity_available=quantity,
-                        cost_per_unit=cost,
-                        supplier_batch_number=supplier_batch_or_io,
-                        received_date=datetime.utcnow(),
-                        status='active'
-                    )
-                    db.session.add(batch)
+                    # Check if batch already exists (disable autoflush to prevent premature flush)
+                    with db.session.no_autoflush:
+                        existing_batch = Batch.query.filter_by(batch_number=batch_number).first()
+
+                    if existing_batch:
+                        results['errors'].append(f'Row {row_num}: Batch number "{batch_number}" already exists. Skipping batch creation.')
+                    else:
+                        # Create batch with batch number
+                        batch = Batch(
+                            batch_number=batch_number,
+                            material_id=material.id,
+                            location_id=location.id,
+                            bin_id=bin_obj.id if bin_obj else None,
+                            quantity_original=quantity,
+                            quantity_available=quantity,
+                            cost_per_unit=cost,
+                            supplier_batch_number=supplier_batch_or_io,
+                            received_date=datetime.utcnow(),
+                            status='active'
+                        )
+                        db.session.add(batch)
 
                     # Update inventory level
                     inv = InventoryLevel.query.filter_by(
@@ -292,20 +307,27 @@ def upload():
                         if height is not None:
                             item.height = height
 
-                    # Create batch with batch number
-                    batch = Batch(
-                        batch_number=batch_number,
-                        item_id=item.id,
-                        location_id=location.id,
-                        bin_id=bin_obj.id if bin_obj else None,
-                        quantity_original=quantity,
-                        quantity_available=quantity,
-                        cost_per_unit=cost,
-                        po_number=supplier_batch_or_io,  # Internal order number for items
-                        received_date=datetime.utcnow(),
-                        status='active'
-                    )
-                    db.session.add(batch)
+                    # Check if batch already exists (disable autoflush to prevent premature flush)
+                    with db.session.no_autoflush:
+                        existing_batch = Batch.query.filter_by(batch_number=batch_number).first()
+
+                    if existing_batch:
+                        results['errors'].append(f'Row {row_num}: Batch number "{batch_number}" already exists. Skipping batch creation.')
+                    else:
+                        # Create batch with batch number
+                        batch = Batch(
+                            batch_number=batch_number,
+                            item_id=item.id,
+                            location_id=location.id,
+                            bin_id=bin_obj.id if bin_obj else None,
+                            quantity_original=quantity,
+                            quantity_available=quantity,
+                            cost_per_unit=cost,
+                            po_number=supplier_batch_or_io,  # Internal order number for items
+                            received_date=datetime.utcnow(),
+                            status='active'
+                        )
+                        db.session.add(batch)
 
                     # Update inventory level
                     inv = InventoryLevel.query.filter_by(
@@ -332,7 +354,12 @@ def upload():
                 results['errors'].append(f'Row {row_num}: {str(e)}')
 
         # Commit all changes
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error committing changes: {str(e)}', 'danger')
+            return redirect(url_for('imports.index'))
 
         # Show results
         flash(f'Import completed! Materials: {results["created_materials"]}, Items: {results["created_items"]}, Stock updated: {results["updated_stock"]}', 'success')
