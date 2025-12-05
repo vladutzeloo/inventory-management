@@ -109,7 +109,11 @@
                             <strong class="text-primary">{{ material.name }}</strong>
                         </td>
                         <td>
+                            {% if material.description %}
                             <small class="text-muted">{{ material.description[:50] }}{% if material.description|length > 50 %}...{% endif %}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
                         </td>
                         <td>
                             {% if material.category_obj %}
