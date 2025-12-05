@@ -552,9 +552,12 @@ class User(UserMixin, db.Model):
 class Category(db.Model):
     """Categories for materials and items"""
     __tablename__ = 'categories'
+    __table_args__ = (
+        db.UniqueConstraint('name', 'category_type', name='uq_category_name_type'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(100), nullable=False, index=True)
     description = db.Column(db.Text)
     category_type = db.Column(db.String(20), nullable=False)  # 'material' or 'item'
     active = db.Column(db.Boolean, default=True)
