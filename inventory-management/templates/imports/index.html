@@ -111,38 +111,44 @@
                                 <td>25.50</td>
                                 <td>No (defaults to 0)</td>
                             </tr>
+                            <tr class="table-warning">
+                                <td><strong>J: Ownership Type</strong></td>
+                                <td>OWNED (bought by you) or LOHN (consignment/toll processing)</td>
+                                <td>OWNED or LOHN</td>
+                                <td>No (defaults to OWNED)</td>
+                            </tr>
                             <tr class="table-info">
-                                <td><strong>J: Batch Number</strong></td>
-                                <td>Unique batch identifier (auto-generated if empty)</td>
+                                <td><strong>K: Batch Number</strong></td>
+                                <td>Unique batch identifier (auto-prefixed with ownership type)</td>
                                 <td>BATCH-MAT-001</td>
                                 <td>No</td>
                             </tr>
                             <tr class="table-info">
-                                <td><strong>K: Supplier Batch/IO Number</strong></td>
+                                <td><strong>L: Supplier Batch/IO Number</strong></td>
                                 <td>Supplier Batch for materials / Internal Order for items</td>
                                 <td>SUP-12345 or IO-2025-001</td>
                                 <td>No</td>
                             </tr>
                             <tr>
-                                <td><strong>L: Diameter</strong></td>
+                                <td><strong>M: Diameter</strong></td>
                                 <td>Diameter dimension</td>
                                 <td>10.5</td>
                                 <td>No</td>
                             </tr>
                             <tr>
-                                <td><strong>M: Width</strong></td>
+                                <td><strong>N: Width</strong></td>
                                 <td>Width dimension</td>
                                 <td>100</td>
                                 <td>No</td>
                             </tr>
                             <tr>
-                                <td><strong>N: Length</strong></td>
+                                <td><strong>O: Length</strong></td>
                                 <td>Length dimension</td>
                                 <td>200</td>
                                 <td>No</td>
                             </tr>
                             <tr>
-                                <td><strong>O: Height</strong></td>
+                                <td><strong>P: Height</strong></td>
                                 <td>Height dimension</td>
                                 <td>50</td>
                                 <td>No</td>
@@ -159,6 +165,7 @@
                         <li>Providers/Clients will be auto-created</li>
                         <li>Bins will be auto-created in the specified location</li>
                         <li>Stock will be added to existing inventory levels</li>
+                        <li><strong>Batch numbers are auto-prefixed with ownership type (OWNED- or LOHN-)</strong></li>
                     </ul>
                 </div>
 
@@ -166,6 +173,8 @@
                     <h6><i class="fas fa-exclamation-triangle"></i> Important Notes:</h6>
                     <ul class="mb-0">
                         <li><strong>Locations must exist</strong> before import - create them first!</li>
+                        <li><strong>Ownership Type:</strong> Use "OWNED" for materials you bought, or "LOHN" for consignment/toll processing materials (owned by others)</li>
+                        <li>Batch numbers will automatically be prefixed with ownership type for easy identification</li>
                         <li>Row 1 should be headers (will be skipped)</li>
                         <li>Empty rows will be skipped</li>
                         <li>Errors will be shown after import completes</li>
@@ -186,6 +195,7 @@
                                 <th>Quantity</th>
                                 <th>UOM</th>
                                 <th>Cost</th>
+                                <th>Ownership</th>
                                 <th>Batch Number</th>
                                 <th>Supplier Batch/IO</th>
                                 <th>Diameter</th>
@@ -205,6 +215,7 @@
                                 <td>150</td>
                                 <td>KG</td>
                                 <td>25.50</td>
+                                <td>OWNED</td>
                                 <td>BATCH-MAT-001</td>
                                 <td>SUP-12345</td>
                                 <td></td>
@@ -222,6 +233,7 @@
                                 <td>500</td>
                                 <td>M</td>
                                 <td>2.30</td>
+                                <td>LOHN</td>
                                 <td>BATCH-MAT-002</td>
                                 <td>SUP-67890</td>
                                 <td>2.5</td>
@@ -239,6 +251,7 @@
                                 <td>100</td>
                                 <td>PCS</td>
                                 <td>150.00</td>
+                                <td>OWNED</td>
                                 <td>BATCH-FG-001</td>
                                 <td>IO-2025-001</td>
                                 <td></td>

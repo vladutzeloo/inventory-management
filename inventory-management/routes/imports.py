@@ -71,7 +71,7 @@ def upload():
                 if not row or all(cell is None for cell in row):
                     continue  # Skip empty rows
 
-                # Expected columns: Type, Name, Category, Provider/Client, Location, Bin, Quantity, UOM, Cost, Batch Number, Supplier Batch/IO Number, Diameter, Width, Length, Height
+                # Expected columns: Type, Name, Category, Provider/Client, Location, Bin, Quantity, UOM, Cost, Ownership Type, Batch Number, Supplier Batch/IO Number, Diameter, Width, Length, Height
                 item_type = str(row[0]).strip().lower() if row[0] else None
                 name = str(row[1]).strip() if row[1] else None
                 category_name = str(row[2]).strip() if row[2] else None
@@ -97,36 +97,41 @@ def upload():
                     except (ValueError, TypeError):
                         cost = 0
 
+                # NEW: Ownership type (Owned/Lohn)
+                ownership_type = str(row[9]).strip().upper() if row[9] not in [None, ''] else 'OWNED'
+                if ownership_type not in ['OWNED', 'LOHN']:
+                    ownership_type = 'OWNED'  # Default to owned if invalid
+
                 # NEW: Batch information
-                batch_number = str(row[9]).strip() if row[9] not in [None, ''] else None
-                supplier_batch_or_io = str(row[10]).strip() if row[10] not in [None, ''] else None  # Supplier batch for materials, IO number for items
+                batch_number = str(row[10]).strip() if row[10] not in [None, ''] else None
+                supplier_batch_or_io = str(row[11]).strip() if row[11] not in [None, ''] else None  # Supplier batch for materials, IO number for items
 
                 # Safe float conversion for dimensions
                 diameter = None
-                if len(row) > 11 and row[11] not in [None, '']:
+                if len(row) > 12 and row[12] not in [None, '']:
                     try:
-                        diameter = float(row[11])
+                        diameter = float(row[12])
                     except (ValueError, TypeError):
                         pass
 
                 width = None
-                if len(row) > 12 and row[12] not in [None, '']:
+                if len(row) > 13 and row[13] not in [None, '']:
                     try:
-                        width = float(row[12])
+                        width = float(row[13])
                     except (ValueError, TypeError):
                         pass
 
                 length = None
-                if len(row) > 13 and row[13] not in [None, '']:
+                if len(row) > 14 and row[14] not in [None, '']:
                     try:
-                        length = float(row[13])
+                        length = float(row[14])
                     except (ValueError, TypeError):
                         pass
 
                 height = None
-                if len(row) > 14 and row[14] not in [None, '']:
+                if len(row) > 15 and row[15] not in [None, '']:
                     try:
-                        height = float(row[14])
+                        height = float(row[15])
                     except (ValueError, TypeError):
                         pass
 
@@ -134,9 +139,13 @@ def upload():
                     results['errors'].append(f'Row {row_num}: Missing required fields (Type, Name, or Location)')
                     continue
 
-                # Generate batch number if not provided
+                # Generate batch number if not provided, with ownership prefix
                 if not batch_number:
-                    batch_number = f"BATCH-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{row_num}"
+                    batch_number = f"{ownership_type}-BATCH-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{row_num}"
+                else:
+                    # Add ownership prefix if not already present
+                    if not batch_number.startswith(('OWNED-', 'LOHN-')):
+                        batch_number = f"{ownership_type}-{batch_number}"
 
                 # Get or create category
                 category = None
@@ -372,23 +381,23 @@ def download_template():
 
     # Headers
     headers = ['Type', 'Name', 'Category', 'Provider/Client', 'Location', 'Bin',
-               'Quantity', 'UOM', 'Cost', 'Batch Number', 'Supplier Batch/IO Number',
+               'Quantity', 'UOM', 'Cost', 'Ownership Type', 'Batch Number', 'Supplier Batch/IO Number',
                'Diameter', 'Width', 'Length', 'Height']
     ws.append(headers)
 
-    # Sample data - Material examples
+    # Sample data - Material examples (Owned)
     ws.append(['material', 'Steel Plate 5mm', 'Metals', 'ABC Steel Co', 'WH-01', 'A-01',
-               150, 'KG', 25.50, 'BATCH-MAT-001', 'SUP-12345', '', 1000, 2000, 5])
+               150, 'KG', 25.50, 'OWNED', 'BATCH-MAT-001', 'SUP-12345', '', 1000, 2000, 5])
     ws.append(['material', 'Copper Wire 2.5mm', 'Metals', 'XYZ Suppliers', 'WH-01', 'B-03',
-               500, 'M', 2.30, 'BATCH-MAT-002', 'SUP-67890', 2.5, '', '', ''])
+               500, 'M', 2.30, 'LOHN', 'BATCH-MAT-002', 'SUP-67890', 2.5, '', '', ''])
     ws.append(['material', 'Aluminum Rod 10mm', 'Metals', 'ABC Steel Co', 'WH-01', 'A-02',
-               200, 'PCS', 15.00, 'BATCH-MAT-003', 'SUP-11111', 10, '', 3000, ''])
+               200, 'PCS', 15.00, 'OWNED', 'BATCH-MAT-003', 'SUP-11111', 10, '', 3000, ''])
 
     # Sample data - Item examples
     ws.append(['item', 'Widget A1000', 'Electronics', 'ClientCo Inc', 'WH-02', 'C-05',
-               100, 'PCS', 150.00, 'BATCH-FG-001', 'IO-2025-001', '', 50, 100, 30])
+               100, 'PCS', 150.00, 'OWNED', 'BATCH-FG-001', 'IO-2025-001', '', 50, 100, 30])
     ws.append(['item', 'Assembly B2000', 'Assemblies', 'TechCorp Ltd', 'WH-02', 'C-06',
-               50, 'SET', 299.99, 'BATCH-FG-002', 'IO-2025-002', '', 200, 150, 75])
+               50, 'SET', 299.99, 'LOHN', 'BATCH-FG-002', 'IO-2025-002', '', 200, 150, 75])
 
     # Auto-adjust column widths
     for column in ws.columns:
