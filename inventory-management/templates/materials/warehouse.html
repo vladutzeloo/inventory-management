@@ -17,7 +17,7 @@
 
 <!-- Info Banner -->
 <div class="alert alert-info alert-dismissible fade show" role="alert">
-    <i class="fas fa-info-circle"></i> <strong>Warehouse View:</strong> This view displays material dimensions and physical specifications to help with storage planning and material handling.
+    <i class="fas fa-info-circle"></i> <strong>Warehouse View:</strong> This view displays materials and items with their dimensions, bin locations, and physical specifications to help with storage planning and material handling.
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 
@@ -45,6 +45,18 @@
                        placeholder="Search by name or description...">
             </div>
 
+            <!-- Type Filter -->
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-filter"></i> Type
+                </label>
+                <select class="form-select" name="type">
+                    <option value="">All (Materials & Items)</option>
+                    <option value="material" {% if item_type == 'material' %}selected{% endif %}>Materials Only</option>
+                    <option value="item" {% if item_type == 'item' %}selected{% endif %}>Items Only</option>
+                </select>
+            </div>
+
             <!-- Category Filter -->
             <div class="col-md-3">
                 <label class="form-label small fw-bold">
@@ -52,11 +64,20 @@
                 </label>
                 <select class="form-select" name="category_id">
                     <option value="">All Categories</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id }}" {% if category_id == cat.id|string %}selected{% endif %}>
-                        {{ cat.name }}
-                    </option>
-                    {% endfor %}
+                    <optgroup label="Material Categories">
+                        {% for cat in material_categories %}
+                        <option value="{{ cat.id }}" {% if category_id == cat.id|string %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="Item Categories">
+                        {% for cat in item_categories %}
+                        <option value="{{ cat.id }}" {% if category_id == cat.id|string %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
                 </select>
             </div>
 
@@ -70,6 +91,21 @@
                     {% for provider in providers %}
                     <option value="{{ provider.id }}" {% if provider_id == provider.id|string %}selected{% endif %}>
                         {{ provider.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Client Filter -->
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-users"></i> Client
+                </label>
+                <select class="form-select" name="client_id">
+                    <option value="">All Clients</option>
+                    {% for client in clients %}
+                    <option value="{{ client.id }}" {% if client_id == client.id|string %}selected{% endif %}>
+                        {{ client.name }}
                     </option>
                     {% endfor %}
                 </select>
@@ -132,84 +168,95 @@
     </div>
 </div>
 
-<!-- Materials Grid -->
+<!-- Warehouse Grid -->
 <div class="card shadow-sm">
     <div class="card-header bg-primary text-white">
         <h5 class="mb-0">
-            <i class="fas fa-cube"></i> Materials
+            <i class="fas fa-warehouse"></i> Warehouse Inventory
             <span class="badge bg-light text-primary ms-2">{{ pagination.total }} Total</span>
         </h5>
     </div>
     <div class="card-body p-0">
-        {% if materials %}
+        {% if items %}
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th>Material Name</th>
+                        <th>Type</th>
+                        <th>Name</th>
                         <th>Category</th>
-                        <th>Provider</th>
+                        <th>Provider/Client</th>
                         <th>UoM</th>
-                        <th class="text-center"><i class="fas fa-circle-notch"></i> Diameter</th>
-                        <th class="text-center"><i class="fas fa-arrows-alt-h"></i> Length</th>
-                        <th class="text-center"><i class="fas fa-arrows-alt-h fa-rotate-90"></i> Width</th>
-                        <th class="text-center"><i class="fas fa-arrows-alt-v"></i> Height</th>
+                        <th class="text-center"><i class="fas fa-circle-notch"></i> ⌀</th>
+                        <th class="text-center"><i class="fas fa-arrows-alt-h"></i> L</th>
+                        <th class="text-center"><i class="fas fa-arrows-alt-h fa-rotate-90"></i> W</th>
+                        <th class="text-center"><i class="fas fa-arrows-alt-v"></i> H</th>
                         <th class="text-end">Total Stock</th>
-                        <th class="text-center">Locations</th>
+                        <th>Bin Locations</th>
                         <th class="text-center">Status</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for material, total_stock, stock_by_location in materials %}
+                    {% for item_data in items %}
+                    {% set item = item_data.item %}
+                    {% set total_stock = item_data.total_stock %}
+                    {% set stock_by_location = item_data.stock_by_location %}
                     <tr>
                         <td>
-                            <strong class="text-primary">{{ material.name }}</strong>
-                            {% if material.description %}
-                            <br><small class="text-muted">{{ material.description[:60] }}{% if material.description|length > 60 %}...{% endif %}</small>
+                            {% if item_data.type == 'material' %}
+                            <span class="badge bg-success"><i class="fas fa-cube"></i> Material</span>
+                            {% else %}
+                            <span class="badge bg-info"><i class="fas fa-box"></i> Item</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if material.category_obj %}
-                            <span class="badge bg-info">{{ material.category_obj.name }}</span>
+                            <strong class="text-primary">{{ item.name }}</strong>
+                            {% if item.description %}
+                            <br><small class="text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.category_obj %}
+                            <span class="badge bg-secondary">{{ item.category_obj.name }}</span>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if material.provider %}
-                            <small>{{ material.provider.name }}</small>
+                            {% if item_data.organization %}
+                            <small>{{ item_data.organization }}</small>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td>
-                            <span class="badge bg-secondary">{{ material.unit_of_measure }}</span>
+                            <span class="badge bg-dark">{{ item.unit_of_measure }}</span>
                         </td>
                         <td class="text-center">
-                            {% if material.diameter %}
-                            <span class="badge bg-primary">{{ material.diameter }}</span>
+                            {% if item.diameter %}
+                            <span class="badge bg-primary">{{ item.diameter }}</span>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if material.length %}
-                            <span class="badge bg-primary">{{ material.length }}</span>
+                            {% if item.length %}
+                            <span class="badge bg-primary">{{ item.length }}</span>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if material.width %}
-                            <span class="badge bg-primary">{{ material.width }}</span>
+                            {% if item.width %}
+                            <span class="badge bg-primary">{{ item.width }}</span>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if material.height %}
-                            <span class="badge bg-primary">{{ material.height }}</span>
+                            {% if item.height %}
+                            <span class="badge bg-primary">{{ item.height }}</span>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
@@ -217,49 +264,51 @@
                         <td class="text-end">
                             {% if total_stock <= 0 %}
                             <span class="badge bg-danger">{{ total_stock }}</span>
-                            {% elif total_stock <= material.reorder_level %}
+                            {% elif total_stock <= item.reorder_level %}
                             <span class="badge bg-warning text-dark">{{ total_stock }}</span>
                             {% else %}
                             <span class="badge bg-success">{{ total_stock }}</span>
                             {% endif %}
-                            <br><small class="text-muted">Reorder: {{ material.reorder_level }}</small>
+                            <br><small class="text-muted">Reorder: {{ item.reorder_level }}</small>
                         </td>
-                        <td class="text-center">
+                        <td>
                             {% if stock_by_location %}
-                            <button class="btn btn-sm btn-outline-info" type="button"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#locations-{{ material.id }}"
-                                    aria-expanded="false">
-                                <i class="fas fa-map-marker-alt"></i> {{ stock_by_location|length }}
-                            </button>
-                            <div class="collapse mt-2" id="locations-{{ material.id }}">
-                                <div class="card card-body p-2 small">
-                                    {% for loc_code, loc_name, bin_code, qty in stock_by_location %}
-                                    <div class="text-start">
-                                        <strong>{{ loc_code }}</strong>
-                                        {% if bin_code %}<small class="text-muted">({{ bin_code }})</small>{% endif %}
-                                        <span class="float-end badge bg-secondary">{{ qty }}</span>
-                                    </div>
-                                    {% endfor %}
+                            <div class="small">
+                                {% for loc_code, loc_name, bin_code, qty in stock_by_location %}
+                                <div class="mb-1">
+                                    <i class="fas fa-map-marker-alt text-primary"></i> <strong>{{ loc_code }}</strong>
+                                    {% if bin_code %}
+                                    <i class="fas fa-box-open text-warning ms-1"></i> <strong>{{ bin_code }}</strong>
+                                    {% endif %}
+                                    <span class="badge bg-secondary ms-1">{{ qty }}</span>
                                 </div>
+                                {% endfor %}
                             </div>
                             {% else %}
-                            <span class="text-muted">-</span>
+                            <span class="text-muted">No stock</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            {% if material.active %}
-                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>
+                            {% if item.active %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle"></i></span>
                             {% else %}
-                            <span class="badge bg-secondary"><i class="fas fa-times-circle"></i> Inactive</span>
+                            <span class="badge bg-secondary"><i class="fas fa-times-circle"></i></span>
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            <a href="{{ url_for('materials.edit', id=material.id) }}"
+                            {% if item_data.type == 'material' %}
+                            <a href="{{ url_for('materials.edit', id=item.id) }}"
                                class="btn btn-sm btn-outline-primary"
                                title="Edit Material">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            {% else %}
+                            <a href="{{ url_for('items.edit', id=item.id) }}"
+                               class="btn btn-sm btn-outline-primary"
+                               title="Edit Item">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -269,7 +318,7 @@
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-            <p class="text-muted">No materials found matching your criteria.</p>
+            <p class="text-muted">No items found matching your criteria.</p>
             <a href="{{ url_for('materials.warehouse_view') }}" class="btn btn-secondary me-2">
                 <i class="fas fa-times"></i> Clear Filters
             </a>
@@ -286,7 +335,7 @@
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center mb-0">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('materials.warehouse_view', page=pagination.prev_num, search=search, category_id=category_id, provider_id=provider_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
+                    <a class="page-link" href="{{ url_for('materials.warehouse_view', page=pagination.prev_num, search=search, type=item_type, category_id=category_id, provider_id=provider_id, client_id=client_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
                         <i class="fas fa-chevron-left"></i> Previous
                     </a>
                 </li>
@@ -294,7 +343,7 @@
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                     {% if page_num %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('materials.warehouse_view', page=page_num, search=search, category_id=category_id, provider_id=provider_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
+                            <a class="page-link" href="{{ url_for('materials.warehouse_view', page=page_num, search=search, type=item_type, category_id=category_id, provider_id=provider_id, client_id=client_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
                                 {{ page_num }}
                             </a>
                         </li>
@@ -306,7 +355,7 @@
                 {% endfor %}
 
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('materials.warehouse_view', page=pagination.next_num, search=search, category_id=category_id, provider_id=provider_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
+                    <a class="page-link" href="{{ url_for('materials.warehouse_view', page=pagination.next_num, search=search, type=item_type, category_id=category_id, provider_id=provider_id, client_id=client_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
                         Next <i class="fas fa-chevron-right"></i>
                     </a>
                 </li>
@@ -315,7 +364,7 @@
         <div class="text-center mt-2">
             <small class="text-muted">
                 Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} -
-                {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} of {{ pagination.total }} materials
+                {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} of {{ pagination.total }} items
             </small>
         </div>
     </div>

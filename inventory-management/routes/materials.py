@@ -92,86 +92,71 @@ def index():
 @bp.route('/warehouse')
 @login_required
 def warehouse_view():
-    """Warehouse view with material dimensions for warehouse managers"""
+    """Warehouse view with material and item dimensions for warehouse managers"""
+    from models import Item, Client
+
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
+    item_type = request.args.get('type', '', type=str)  # 'material' or 'item'
     category_id = request.args.get('category_id', '', type=str)
     provider_id = request.args.get('provider_id', '', type=str)
+    client_id = request.args.get('client_id', '', type=str)
     location_id = request.args.get('location_id', '', type=str)
     has_dimensions = request.args.get('has_dimensions', '', type=str)
-    active_filter = request.args.get('active', 'active', type=str)  # Default to active only
+    active_filter = request.args.get('active', 'active', type=str)
 
-    query = Material.query
+    # Collect all items (materials and items) with their inventory
+    all_items = []
 
-    # Search filter
-    if search:
-        query = query.filter(
-            or_(
-                Material.name.ilike(f'%{search}%'),
-                Material.description.ilike(f'%{search}%')
+    # Query materials if not filtered to items only
+    if item_type != 'item':
+        material_query = Material.query
+
+        if search:
+            material_query = material_query.filter(
+                or_(
+                    Material.name.ilike(f'%{search}%'),
+                    Material.description.ilike(f'%{search}%')
+                )
             )
-        )
 
-    # Category filter
-    if category_id:
-        query = query.filter(Material.category_id == int(category_id))
+        if category_id:
+            material_query = material_query.filter(Material.category_id == int(category_id))
 
-    # Provider filter
-    if provider_id:
-        query = query.filter(Material.provider_id == int(provider_id))
+        if provider_id:
+            material_query = material_query.filter(Material.provider_id == int(provider_id))
 
-    # Dimension filter
-    if has_dimensions == 'yes':
-        query = query.filter(
-            or_(
-                Material.diameter.isnot(None),
-                Material.length.isnot(None),
-                Material.width.isnot(None),
-                Material.height.isnot(None)
+        if has_dimensions == 'yes':
+            material_query = material_query.filter(
+                or_(
+                    Material.diameter.isnot(None),
+                    Material.length.isnot(None),
+                    Material.width.isnot(None),
+                    Material.height.isnot(None)
+                )
             )
-        )
-    elif has_dimensions == 'no':
-        query = query.filter(
-            Material.diameter.is_(None),
-            Material.length.is_(None),
-            Material.width.is_(None),
-            Material.height.is_(None)
-        )
+        elif has_dimensions == 'no':
+            material_query = material_query.filter(
+                Material.diameter.is_(None),
+                Material.length.is_(None),
+                Material.width.is_(None),
+                Material.height.is_(None)
+            )
 
-    # Active/Inactive filter
-    if active_filter == 'active':
-        query = query.filter(Material.active == True)
-    elif active_filter == 'inactive':
-        query = query.filter(Material.active == False)
+        if active_filter == 'active':
+            material_query = material_query.filter(Material.active == True)
+        elif active_filter == 'inactive':
+            material_query = material_query.filter(Material.active == False)
 
-    # Get all categories for filter dropdown
-    categories = Category.query.filter_by(category_type='material', active=True).order_by(Category.name).all()
+        materials = material_query.order_by(Material.name).all()
 
-    # Get all active providers for filter dropdown
-    providers = Provider.query.filter_by(active=True).order_by(Provider.name).all()
+        for material in materials:
+            total_stock = db.session.query(func.sum(InventoryLevel.quantity)).filter(
+                InventoryLevel.material_id == material.id
+            ).scalar() or 0
 
-    # Get all locations for filter dropdown
-    locations = Location.query.filter_by(active=True).order_by(Location.code).all()
-
-    # Pagination
-    pagination = query.order_by(Material.name).paginate(
-        page=page, per_page=50, error_out=False
-    )
-    materials = pagination.items
-
-    # Get inventory details for each material
-    materials_with_inventory = []
-    for material in materials:
-        # Get total stock
-        total_stock = db.session.query(func.sum(InventoryLevel.quantity)).filter(
-            InventoryLevel.material_id == material.id
-        ).scalar() or 0
-
-        # Get stock by location if location filter is applied
-        stock_by_location = []
-        if location_id:
-            # Get stock for specific location
-            location_query = db.session.query(
+            # Always get detailed location/bin information
+            stock_by_location = db.session.query(
                 Location.code,
                 Location.name,
                 Bin.bin_code,
@@ -181,33 +166,154 @@ def warehouse_view():
             ).outerjoin(
                 Bin, InventoryLevel.bin_id == Bin.id
             ).filter(
-                InventoryLevel.material_id == material.id,
-                Location.id == int(location_id)
-            ).all()
-            stock_by_location = location_query
-        else:
-            # Get stock for all locations
-            location_query = db.session.query(
+                InventoryLevel.material_id == material.id
+            )
+
+            if location_id:
+                stock_by_location = stock_by_location.filter(Location.id == int(location_id))
+
+            stock_by_location = stock_by_location.order_by(Location.code, Bin.bin_code).all()
+
+            all_items.append({
+                'type': 'material',
+                'item': material,
+                'total_stock': total_stock,
+                'stock_by_location': stock_by_location,
+                'organization': material.provider.name if material.provider else None
+            })
+
+    # Query items if not filtered to materials only
+    if item_type != 'material':
+        item_query = Item.query
+
+        if search:
+            item_query = item_query.filter(
+                or_(
+                    Item.name.ilike(f'%{search}%'),
+                    Item.description.ilike(f'%{search}%')
+                )
+            )
+
+        if category_id:
+            item_query = item_query.filter(Item.category_id == int(category_id))
+
+        if client_id:
+            item_query = item_query.filter(Item.client_id == int(client_id))
+
+        if has_dimensions == 'yes':
+            item_query = item_query.filter(
+                or_(
+                    Item.diameter.isnot(None),
+                    Item.length.isnot(None),
+                    Item.width.isnot(None),
+                    Item.height.isnot(None)
+                )
+            )
+        elif has_dimensions == 'no':
+            item_query = item_query.filter(
+                Item.diameter.is_(None),
+                Item.length.is_(None),
+                Item.width.is_(None),
+                Item.height.is_(None)
+            )
+
+        if active_filter == 'active':
+            item_query = item_query.filter(Item.active == True)
+        elif active_filter == 'inactive':
+            item_query = item_query.filter(Item.active == False)
+
+        items = item_query.order_by(Item.name).all()
+
+        for item in items:
+            total_stock = db.session.query(func.sum(InventoryLevel.quantity)).filter(
+                InventoryLevel.item_id == item.id
+            ).scalar() or 0
+
+            # Always get detailed location/bin information
+            stock_by_location = db.session.query(
                 Location.code,
                 Location.name,
-                func.sum(InventoryLevel.quantity).label('quantity')
+                Bin.bin_code,
+                InventoryLevel.quantity
             ).join(
                 InventoryLevel, InventoryLevel.location_id == Location.id
+            ).outerjoin(
+                Bin, InventoryLevel.bin_id == Bin.id
             ).filter(
-                InventoryLevel.material_id == material.id
-            ).group_by(Location.id, Location.code, Location.name).all()
-            stock_by_location = [(loc[0], loc[1], None, loc[2]) for loc in location_query]
+                InventoryLevel.item_id == item.id
+            )
 
-        materials_with_inventory.append((material, total_stock, stock_by_location))
+            if location_id:
+                stock_by_location = stock_by_location.filter(Location.id == int(location_id))
+
+            stock_by_location = stock_by_location.order_by(Location.code, Bin.bin_code).all()
+
+            all_items.append({
+                'type': 'item',
+                'item': item,
+                'total_stock': total_stock,
+                'stock_by_location': stock_by_location,
+                'organization': item.client.name if item.client else None
+            })
+
+    # Sort all items by name
+    all_items.sort(key=lambda x: x['item'].name)
+
+    # Manual pagination
+    total_items = len(all_items)
+    per_page = 50
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_items = all_items[start:end]
+
+    # Create pagination object manually
+    class SimplePagination:
+        def __init__(self, page, per_page, total):
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page if total > 0 else 1
+            self.has_prev = page > 1
+            self.has_next = page < self.pages
+            self.prev_num = page - 1 if self.has_prev else None
+            self.next_num = page + 1 if self.has_next else None
+
+        def iter_pages(self, left_edge=1, right_edge=1, left_current=2, right_current=2):
+            last = 0
+            for num in range(1, self.pages + 1):
+                if (num <= left_edge or
+                    (self.page - left_current - 1 < num < self.page + right_current) or
+                    num > self.pages - right_edge):
+                    if last + 1 != num:
+                        yield None
+                    yield num
+                    last = num
+
+    pagination = SimplePagination(page, per_page, total_items)
+
+    # Get all categories for both types
+    material_categories = Category.query.filter_by(category_type='material', active=True).order_by(Category.name).all()
+    item_categories = Category.query.filter_by(category_type='item', active=True).order_by(Category.name).all()
+
+    # Get providers and clients
+    providers = Provider.query.filter_by(active=True).order_by(Provider.name).all()
+    clients = Client.query.filter_by(active=True).order_by(Client.name).all()
+
+    # Get locations
+    locations = Location.query.filter_by(active=True).order_by(Location.code).all()
 
     return render_template('materials/warehouse.html',
-                          materials=materials_with_inventory,
+                          items=paginated_items,
                           pagination=pagination,
                           search=search,
+                          item_type=item_type,
                           category_id=category_id,
-                          categories=categories,
+                          material_categories=material_categories,
+                          item_categories=item_categories,
                           provider_id=provider_id,
                           providers=providers,
+                          client_id=client_id,
+                          clients=clients,
                           location_id=location_id,
                           locations=locations,
                           has_dimensions=has_dimensions,
