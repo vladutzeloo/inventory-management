@@ -108,7 +108,11 @@
                                 <strong class="text-primary">{{ item.name }}</strong>
                             </td>
                             <td>
+                                {% if item.description %}
                                 <small class="text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if item.category_obj %}
