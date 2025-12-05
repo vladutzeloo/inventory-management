@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Warehouse Materials View - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-warehouse text-primary"></i> Warehouse Materials View</h2>
+    <div>
+        <a href="{{ url_for('materials.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-list"></i> Standard View
+        </a>
+        <a href="{{ url_for('materials.new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Material
+        </a>
+    </div>
+</div>
+
+<!-- Info Banner -->
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <i class="fas fa-info-circle"></i> <strong>Warehouse View:</strong> This view displays material dimensions and physical specifications to help with storage planning and material handling.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h6 class="mb-0">
+            <i class="fas fa-filter"></i> Search & Filters
+            <button class="btn btn-sm btn-link float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                <i class="fas fa-chevron-down"></i> Toggle Filters
+            </button>
+        </h6>
+    </div>
+    <div class="card-body collapse show" id="filterCollapse">
+        <form method="GET" action="{{ url_for('materials.warehouse_view') }}" class="row g-3">
+            <!-- Search Field -->
+            <div class="col-md-12">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-search"></i> Search Material
+                </label>
+                <input type="text"
+                       class="form-control"
+                       name="search"
+                       value="{{ search }}"
+                       placeholder="Search by name or description...">
+            </div>
+
+            <!-- Category Filter -->
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-tag"></i> Category
+                </label>
+                <select class="form-select" name="category_id">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_id == cat.id|string %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Provider Filter -->
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-truck"></i> Provider
+                </label>
+                <select class="form-select" name="provider_id">
+                    <option value="">All Providers</option>
+                    {% for provider in providers %}
+                    <option value="{{ provider.id }}" {% if provider_id == provider.id|string %}selected{% endif %}>
+                        {{ provider.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Location Filter -->
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-map-marker-alt"></i> Location
+                </label>
+                <select class="form-select" name="location_id">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}" {% if location_id == location.id|string %}selected{% endif %}>
+                        {{ location.code }} - {{ location.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Dimensions Filter -->
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-ruler-combined"></i> Has Dimensions
+                </label>
+                <select class="form-select" name="has_dimensions">
+                    <option value="">All Materials</option>
+                    <option value="yes" {% if has_dimensions == 'yes' %}selected{% endif %}>With Dimensions</option>
+                    <option value="no" {% if has_dimensions == 'no' %}selected{% endif %}>Without Dimensions</option>
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-md-12">
+                <label class="form-label small fw-bold">
+                    <i class="fas fa-toggle-on"></i> Status
+                </label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="active" id="active_all" value="" {% if not active_filter %}checked{% endif %}>
+                    <label class="btn btn-outline-secondary" for="active_all">All</label>
+
+                    <input type="radio" class="btn-check" name="active" id="active_yes" value="active" {% if active_filter == 'active' %}checked{% endif %}>
+                    <label class="btn btn-outline-success" for="active_yes">Active Only</label>
+
+                    <input type="radio" class="btn-check" name="active" id="active_no" value="inactive" {% if active_filter == 'inactive' %}checked{% endif %}>
+                    <label class="btn btn-outline-danger" for="active_no">Inactive Only</label>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="col-12 text-end">
+                <a href="{{ url_for('materials.warehouse_view') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Clear Filters
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Materials Grid -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-cube"></i> Materials
+            <span class="badge bg-light text-primary ms-2">{{ pagination.total }} Total</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if materials %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Material Name</th>
+                        <th>Category</th>
+                        <th>Provider</th>
+                        <th>UoM</th>
+                        <th class="text-center"><i class="fas fa-circle-notch"></i> Diameter</th>
+                        <th class="text-center"><i class="fas fa-arrows-alt-h"></i> Length</th>
+                        <th class="text-center"><i class="fas fa-arrows-alt-h fa-rotate-90"></i> Width</th>
+                        <th class="text-center"><i class="fas fa-arrows-alt-v"></i> Height</th>
+                        <th class="text-end">Total Stock</th>
+                        <th class="text-center">Locations</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for material, total_stock, stock_by_location in materials %}
+                    <tr>
+                        <td>
+                            <strong class="text-primary">{{ material.name }}</strong>
+                            {% if material.description %}
+                            <br><small class="text-muted">{{ material.description[:60] }}{% if material.description|length > 60 %}...{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if material.category_obj %}
+                            <span class="badge bg-info">{{ material.category_obj.name }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if material.provider %}
+                            <small>{{ material.provider.name }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ material.unit_of_measure }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if material.diameter %}
+                            <span class="badge bg-primary">{{ material.diameter }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if material.length %}
+                            <span class="badge bg-primary">{{ material.length }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if material.width %}
+                            <span class="badge bg-primary">{{ material.width }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if material.height %}
+                            <span class="badge bg-primary">{{ material.height }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if total_stock <= 0 %}
+                            <span class="badge bg-danger">{{ total_stock }}</span>
+                            {% elif total_stock <= material.reorder_level %}
+                            <span class="badge bg-warning text-dark">{{ total_stock }}</span>
+                            {% else %}
+                            <span class="badge bg-success">{{ total_stock }}</span>
+                            {% endif %}
+                            <br><small class="text-muted">Reorder: {{ material.reorder_level }}</small>
+                        </td>
+                        <td class="text-center">
+                            {% if stock_by_location %}
+                            <button class="btn btn-sm btn-outline-info" type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#locations-{{ material.id }}"
+                                    aria-expanded="false">
+                                <i class="fas fa-map-marker-alt"></i> {{ stock_by_location|length }}
+                            </button>
+                            <div class="collapse mt-2" id="locations-{{ material.id }}">
+                                <div class="card card-body p-2 small">
+                                    {% for loc_code, loc_name, bin_code, qty in stock_by_location %}
+                                    <div class="text-start">
+                                        <strong>{{ loc_code }}</strong>
+                                        {% if bin_code %}<small class="text-muted">({{ bin_code }})</small>{% endif %}
+                                        <span class="float-end badge bg-secondary">{{ qty }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if material.active %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="fas fa-times-circle"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ url_for('materials.edit', id=material.id) }}"
+                               class="btn btn-sm btn-outline-primary"
+                               title="Edit Material">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No materials found matching your criteria.</p>
+            <a href="{{ url_for('materials.warehouse_view') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-times"></i> Clear Filters
+            </a>
+            <a href="{{ url_for('materials.new') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create First Material
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-light">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('materials.warehouse_view', page=pagination.prev_num, search=search, category_id=category_id, provider_id=provider_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('materials.warehouse_view', page=page_num, search=search, category_id=category_id, provider_id=provider_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('materials.warehouse_view', page=pagination.next_num, search=search, category_id=category_id, provider_id=provider_id, location_id=location_id, has_dimensions=has_dimensions, active=active_filter) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} -
+                {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} of {{ pagination.total }} materials
+            </small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

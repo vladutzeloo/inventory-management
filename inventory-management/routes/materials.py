@@ -89,6 +89,131 @@ def index():
                           active_filter=active_filter)
 
 
+@bp.route('/warehouse')
+@login_required
+def warehouse_view():
+    """Warehouse view with material dimensions for warehouse managers"""
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '', type=str)
+    category_id = request.args.get('category_id', '', type=str)
+    provider_id = request.args.get('provider_id', '', type=str)
+    location_id = request.args.get('location_id', '', type=str)
+    has_dimensions = request.args.get('has_dimensions', '', type=str)
+    active_filter = request.args.get('active', 'active', type=str)  # Default to active only
+
+    query = Material.query
+
+    # Search filter
+    if search:
+        query = query.filter(
+            or_(
+                Material.name.ilike(f'%{search}%'),
+                Material.description.ilike(f'%{search}%')
+            )
+        )
+
+    # Category filter
+    if category_id:
+        query = query.filter(Material.category_id == int(category_id))
+
+    # Provider filter
+    if provider_id:
+        query = query.filter(Material.provider_id == int(provider_id))
+
+    # Dimension filter
+    if has_dimensions == 'yes':
+        query = query.filter(
+            or_(
+                Material.diameter.isnot(None),
+                Material.length.isnot(None),
+                Material.width.isnot(None),
+                Material.height.isnot(None)
+            )
+        )
+    elif has_dimensions == 'no':
+        query = query.filter(
+            Material.diameter.is_(None),
+            Material.length.is_(None),
+            Material.width.is_(None),
+            Material.height.is_(None)
+        )
+
+    # Active/Inactive filter
+    if active_filter == 'active':
+        query = query.filter(Material.active == True)
+    elif active_filter == 'inactive':
+        query = query.filter(Material.active == False)
+
+    # Get all categories for filter dropdown
+    categories = Category.query.filter_by(category_type='material', active=True).order_by(Category.name).all()
+
+    # Get all active providers for filter dropdown
+    providers = Provider.query.filter_by(active=True).order_by(Provider.name).all()
+
+    # Get all locations for filter dropdown
+    locations = Location.query.filter_by(active=True).order_by(Location.code).all()
+
+    # Pagination
+    pagination = query.order_by(Material.name).paginate(
+        page=page, per_page=50, error_out=False
+    )
+    materials = pagination.items
+
+    # Get inventory details for each material
+    materials_with_inventory = []
+    for material in materials:
+        # Get total stock
+        total_stock = db.session.query(func.sum(InventoryLevel.quantity)).filter(
+            InventoryLevel.material_id == material.id
+        ).scalar() or 0
+
+        # Get stock by location if location filter is applied
+        stock_by_location = []
+        if location_id:
+            # Get stock for specific location
+            location_query = db.session.query(
+                Location.code,
+                Location.name,
+                Bin.bin_code,
+                InventoryLevel.quantity
+            ).join(
+                InventoryLevel, InventoryLevel.location_id == Location.id
+            ).outerjoin(
+                Bin, InventoryLevel.bin_id == Bin.id
+            ).filter(
+                InventoryLevel.material_id == material.id,
+                Location.id == int(location_id)
+            ).all()
+            stock_by_location = location_query
+        else:
+            # Get stock for all locations
+            location_query = db.session.query(
+                Location.code,
+                Location.name,
+                func.sum(InventoryLevel.quantity).label('quantity')
+            ).join(
+                InventoryLevel, InventoryLevel.location_id == Location.id
+            ).filter(
+                InventoryLevel.material_id == material.id
+            ).group_by(Location.id, Location.code, Location.name).all()
+            stock_by_location = [(loc[0], loc[1], None, loc[2]) for loc in location_query]
+
+        materials_with_inventory.append((material, total_stock, stock_by_location))
+
+    return render_template('materials/warehouse.html',
+                          materials=materials_with_inventory,
+                          pagination=pagination,
+                          search=search,
+                          category_id=category_id,
+                          categories=categories,
+                          provider_id=provider_id,
+                          providers=providers,
+                          location_id=location_id,
+                          locations=locations,
+                          has_dimensions=has_dimensions,
+                          active_filter=active_filter)
+
+
 @bp.route('/new', methods=['GET', 'POST'])
 @login_required
 def new():
