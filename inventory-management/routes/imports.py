@@ -7,6 +7,7 @@ from models import db, Material, Item, Location, Bin, InventoryLevel, Batch, Cat
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from io import BytesIO
+from sqlalchemy.exc import IntegrityError
 import os
 
 bp = Blueprint('imports', __name__)
@@ -142,10 +143,20 @@ def upload():
                 if category_name:
                     category = Category.query.filter_by(name=category_name, category_type=item_type).first()
                     if not category:
-                        category = Category(name=category_name, category_type=item_type, active=True)
-                        db.session.add(category)
-                        db.session.flush()
-                        results['created_categories'] += 1
+                        try:
+                            category = Category(name=category_name, category_type=item_type, active=True)
+                            db.session.add(category)
+                            db.session.flush()
+                            results['created_categories'] += 1
+                        except IntegrityError:
+                            # Category might have been created by another process or in a previous row
+                            # Rollback this flush and query again
+                            db.session.rollback()
+                            category = Category.query.filter_by(name=category_name, category_type=item_type).first()
+                            if not category:
+                                # If still not found, this is a real error - skip this row
+                                results['errors'].append(f'Row {row_num}: Failed to create/find category "{category_name}"')
+                                continue
 
                 # Get or create location
                 location = Location.query.filter_by(code=location_code).first()
